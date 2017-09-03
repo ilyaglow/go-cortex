@@ -1,0 +1,11 @@
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - docker pull certbdf/cortex
+  - docker run -itd -p 9000:9000 certbdf/cortex
+
+script:
+  - go test
