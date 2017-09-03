@@ -1,3 +1,5 @@
+language: go
+
 sudo: required
 
 services:
