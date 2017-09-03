@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/ilyaglow/go-cortex.svg?branch=master)](https://travis-ci.org/ilyaglow/go-cortex)
+
 ## Usage example
 
 ```go
