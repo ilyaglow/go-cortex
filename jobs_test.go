@@ -2,12 +2,10 @@ package gocortex
 
 import (
 	"testing"
-
-	gocortex "github.com/ilyaglow/go-cortex"
 )
 
 func TestListJobs(t *testing.T) {
-	client := gocortex.NewClient("http://127.0.0.1:9000")
+	client := NewClient("http://127.0.0.1:9000")
 
 	_, err := client.ListJobs()
 	if err != nil {
@@ -16,9 +14,9 @@ func TestListJobs(t *testing.T) {
 }
 
 func TestListFilteredJobs(t *testing.T) {
-	client := gocortex.NewClient("http://127.0.0.1:9000")
+	client := NewClient("http://127.0.0.1:9000")
 
-	jf := &gocortex.JobsFilter{
+	jf := &JobsFilter{
 		Analyzer: "MaxMind_GeoIP_3_0",
 		DataType: "ip",
 	}

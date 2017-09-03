@@ -2,12 +2,10 @@ package gocortex
 
 import (
 	"testing"
-
-	gocortex "github.com/ilyaglow/go-cortex"
 )
 
 func TestListAnalyzers(t *testing.T) {
-	client := gocortex.NewClient("http://127.0.0.1:9000")
+	client := NewClient("http://127.0.0.1:9000")
 	a, err := client.ListAnalyzers("*")
 	if err != nil {
 		t.Errorf("Can't list analyzers: %s", err.Error())
@@ -28,7 +26,7 @@ func TestListAnalyzers(t *testing.T) {
 }
 
 func TestGetAnalyzer(t *testing.T) {
-	client := gocortex.NewClient("http://127.0.0.1:9000")
+	client := NewClient("http://127.0.0.1:9000")
 	mm, err := client.GetAnalyzer("MaxMind_GeoIP_3_0")
 	if err != nil {
 		t.Error("Can't do query to get analyzers")
@@ -40,11 +38,11 @@ func TestGetAnalyzer(t *testing.T) {
 }
 
 func TestRunAnalyzer(t *testing.T) {
-	client := gocortex.NewClient("http://127.0.0.1:9000")
+	client := NewClient("http://127.0.0.1:9000")
 
-	j := &gocortex.JobBody{
+	j := &JobBody{
 		Data: "8.8.8.8",
-		Attributes: gocortex.ArtifactAttributes{
+		Attributes: ArtifactAttributes{
 			DataType: "ip",
 			TLP:      2,
 		},
