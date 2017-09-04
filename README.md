@@ -1,3 +1,4 @@
+[![GoDoc](https://godoc.org/github.com/ilyaglow/go-cortex?status.svg)](http://godoc.org/github.com/ilyaglow/go-cortex)
 [![Build Status](https://travis-ci.org/ilyaglow/go-cortex.svg?branch=master)](https://travis-ci.org/ilyaglow/go-cortex)
 
 ## Usage example
