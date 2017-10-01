@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
+	"sync"
 )
 
 const analyzersURL = "/api/analyzer"
@@ -21,7 +23,6 @@ type Analyzer struct {
 //ListAnalyzers retrieves all analyzers available
 //analyzers can be filtered by datatype parameter
 func (c *Client) ListAnalyzers(datatype string) ([]Analyzer, error) {
-
 	requestURL := analyzersURL
 
 	if datatype != "*" {
@@ -76,4 +77,59 @@ func (c *Client) RunAnalyzer(id string, data *JobBody) (*Job, error) {
 	}
 
 	return j, nil
+}
+
+//RunAnalyzerThenGetReport is a helper function that combines multiple functions to return JobReport
+func (c *Client) RunAnalyzerThenGetReport(id string, data *JobBody, timeout string) (*JobReport, error) {
+	j, err := c.RunAnalyzer(id, data)
+	if err != nil {
+		log.Printf("Failed to run analyzer %s", id)
+		return nil, err
+	}
+
+	w, err := c.WaitForJob(j.ID, timeout)
+	if err != nil {
+		log.Printf("Failed to wait for a job %s", j.ID)
+		return nil, err
+	}
+
+	r, err := c.GetJobReport(w.ID)
+	if err != nil {
+		log.Printf("Failed to get job report %s", w.ID)
+		return nil, err
+	}
+
+	return r, nil
+}
+
+//AnalyzeData runs all analyzers suitable for a specified job and returns a channel
+func (c *Client) AnalyzeData(data *JobBody, timeout string) (<-chan *JobReport, error) {
+	var wg sync.WaitGroup
+	reports := make(chan *JobReport)
+
+	analyzers, err := c.ListAnalyzers(data.Attributes.DataType)
+	if err != nil {
+		return nil, err
+	}
+
+	wg.Add(len(analyzers))
+	for _, a := range analyzers {
+		go func(an Analyzer) {
+			defer wg.Done()
+
+			report, err := c.RunAnalyzerThenGetReport(an.ID, data, timeout)
+			if err == nil {
+				reports <- report
+			} else {
+				log.Printf("Failed to process %s with %s", data.Data, an.Name)
+			}
+		}(a)
+	}
+
+	go func() {
+		wg.Wait()
+		close(reports)
+	}()
+
+	return reports, nil
 }
