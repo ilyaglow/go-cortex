@@ -1,6 +1,7 @@
 package gocortex
 
 import (
+	"log"
 	"testing"
 )
 
@@ -51,5 +52,42 @@ func TestRunAnalyzer(t *testing.T) {
 	_, err := client.RunAnalyzer("MaxMind_GeoIP_3_0", j)
 	if err != nil {
 		t.Error("Can't run analyzer")
+	}
+}
+
+func TestRunAnalyzerThenGetReport(t *testing.T) {
+	client := NewClient("http://127.0.0.1:9000")
+
+	j := &JobBody{
+		Data: "8.8.8.8",
+		Attributes: ArtifactAttributes{
+			DataType: "ip",
+			TLP:      2,
+		},
+	}
+
+	_, err := client.RunAnalyzerThenGetReport("MaxMind_GeoIP_3_0", j, "30seconds")
+	if err != nil {
+		t.Error("Can't run analyzer and get report")
+	}
+}
+
+func TestAnalyzeData(t *testing.T) {
+	client := NewClient("http://127.0.0.1:9000")
+
+	j := &JobBody{
+		Data: "8.8.8.8",
+		Attributes: ArtifactAttributes{
+			DataType: "ip",
+			TLP:      3,
+		},
+	}
+
+	messages, err := client.AnalyzeData(j, "1minute")
+	if err != nil {
+		t.Error("Can't analyze data")
+	}
+	for m := range messages {
+		log.Printf("%s: %s", m.AnalyzerID, m.Status)
 	}
 }
