@@ -4,22 +4,44 @@
 
 ## Usage example
 
+```
+go get -u github.com/ilyaglow/go-cortex
+```
+
 ```go
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/ilyaglow/go-cortex"
 )
 
 func main() {
+    // Create a client struct
 	client := gocortex.NewClient("http://127.0.0.1:9000")
 
-	jobs, err := client.ListJobs()
+	// Fill the JobBody struct
+	j := &gocortex.JobBody{
+		Data: "8.8.8.8",
+		Attributes: ArtifactAttributes{
+			DataType: "ip",
+			TLP:      3,
+		},
+	}
+
+	// Run all analyzers over it with 1 minute timeout
+	reports, err := client.AnalyzeData(j, "1minute")
 	if err != nil {
-		panic("Failed to look up jobs")
+		panic(err)
+	}
+	
+	// Iterate over channel with reports and get taxonomies
+	for m := range reports {
+		txs := m.Taxonomies()
+		for _, t := range txs {
+			log.Printf("\"%s:%s\"=\"%s\"", t.Predicate, t.Namespace, t.Value)
+		}
 	}
 }
 ```
