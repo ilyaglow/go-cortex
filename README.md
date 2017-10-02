@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-    // Create a client struct
+	// Create a client struct
 	client := gocortex.NewClient("http://127.0.0.1:9000")
 
 	// Fill the JobBody struct
