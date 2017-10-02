@@ -24,7 +24,7 @@ func main() {
 	// Fill the JobBody struct
 	j := &gocortex.JobBody{
 		Data: "8.8.8.8",
-		Attributes: ArtifactAttributes{
+		Attributes: gocortex.ArtifactAttributes{
 			DataType: "ip",
 			TLP:      3,
 		},
@@ -40,7 +40,7 @@ func main() {
 	for m := range reports {
 		txs := m.Taxonomies()
 		for _, t := range txs {
-			log.Printf("\"%s:%s\"=\"%s\"", t.Predicate, t.Namespace, t.Value)
+			log.Printf("\"%s:%s\"=\"%s\"", t.Namespace, t.Predicate, t.Value)
 		}
 	}
 }
