@@ -185,7 +185,7 @@ func (c *Client) GetJobReport(id string) (*JobReport, error) {
 
 //DeleteJob deletes and existing job, identified by its ID
 func (c *Client) DeleteJob(id string) (bool, error) {
-	_, s, err := c.sendRequest("DELETE", c.Location+jobsURL+"/"+id, nil)
+	_, s, err := c.sendRequest("DELETE", jobsURL+"/"+id, nil)
 	if err != nil {
 		return false, err
 	}
