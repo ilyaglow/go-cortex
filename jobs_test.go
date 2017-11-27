@@ -86,16 +86,10 @@ var getJobReportResponse []byte = []byte(`
   "report": {
     "artifacts": [
       {
-        "type": "sha1",
-        "value": "cd1c2da4de388a4b5b60601f8b339518fe8fbd31"
-      },
-      {
-        "type": "sha256",
-        "value": "fd1755c7f1f0f85597cf2a1f13f5cbe0782d9e5597aca410da0d5f26cda26b97"
-      },
-      {
-        "type": "md5",
-        "value": "3aa598d1f0d50228d48fe3a792071dde"
+        "data": "cd1c2da4de388a4b5b60601f8b339518fe8fbd31",
+        "attributes": {
+          "dataType": "sha1"
+        }
       }
     ],
     "full": {
@@ -244,12 +238,12 @@ func TestJobReport(t *testing.T) {
 	for i, af := range j.Report.Artifacts {
 		switch i {
 		case 0:
-			if af.AType != "sha1" {
-				t.Error("Wrong artifact type")
+			if af.Attributes.DataType != "sha1" {
+				t.Error("Wrong artifact data type")
 			}
 
-			if af.Value != "cd1c2da4de388a4b5b60601f8b339518fe8fbd31" {
-				t.Error("Wrong artifact value")
+			if af.Data != "cd1c2da4de388a4b5b60601f8b339518fe8fbd31" {
+				t.Error("Wrong artifact data value")
 			}
 		}
 	}
