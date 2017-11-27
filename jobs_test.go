@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var listJobsResponse []byte = []byte(`
+var listJobsResponse = []byte(`
 [
   {
     "id": "OsmbnQJGmeCgvDxP",
@@ -51,7 +51,7 @@ var listJobsResponse []byte = []byte(`
 ]
 `)
 
-var analysisJobResponse []byte = []byte(`
+var analysisJobResponse = []byte(`
 {
     "id": "ymlrxZB8efyZhFEg",
     "analyzerId": "Hipposcore_1_0",
@@ -69,7 +69,7 @@ var analysisJobResponse []byte = []byte(`
 }
 `)
 
-var getJobReportResponse []byte = []byte(`
+var getJobReportResponse = []byte(`
 {
   "id": "vVQu93ps4PwHOtLv",
   "analyzerId": "File_Info_1_0",

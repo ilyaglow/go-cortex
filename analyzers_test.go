@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var getAnalyzerResponse []byte = []byte(`
+var getAnalyzerResponse = []byte(`
 {
   "name": "File_Info",
   "version": "1.0",
