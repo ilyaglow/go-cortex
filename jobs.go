@@ -3,6 +3,7 @@ package gocortex
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/google/go-querystring/query"
@@ -10,7 +11,7 @@ import (
 
 const jobsURL = "/api/job"
 
-//ArtifactAttributes represent particular attributes
+// ArtifactAttributes struct represents Artifact Attributes
 type ArtifactAttributes struct {
 	DataType    string `json:"dataType"`
 	TLP         int    `json:"tlp,omitempty"`
@@ -18,14 +19,16 @@ type ArtifactAttributes struct {
 	Filename    string `json:"filename,omitempty"`
 }
 
-//JobBody represents artifact retrieved from a job
-//and the data supplied for the analyzer to run
-type JobBody struct {
+// JobBody is deprecated and is left for the compatilibity
+type JobBody Artifact
+
+// Artifact represents an artifact which can be supplied for the analysis and retrieved from a job later
+type Artifact struct {
 	Attributes ArtifactAttributes `json:"attributes"`
 	Data       string             `json:"data,omitempty"`
 }
 
-//Job defines a typical analyzer job
+// Job defines an analysis job
 type Job struct {
 	ID         string  `json:"id"`
 	AnalyzerID string  `json:"analyzerId"`
@@ -34,19 +37,20 @@ type Job struct {
 	Artifact   JobBody `json:"artifact"`
 }
 
-//JobReport represents a job response
-//More info: https://github.com/CERT-BDF/CortexDocs/blob/master/api/get-job-report.md
+// JobReport represents a job response
+// More info: https://github.com/CERT-BDF/CortexDocs/blob/master/api/get-job-report.md
 type JobReport struct {
 	Job
 	Report ReportBody `json:"report"`
 }
 
+// summary is a customized report object which may have taxonomies
 type summary struct {
 	Taxonomies []Taxonomy `json:"taxonomies,omitempty"`
 }
 
-//ReportBody defines report of a given job
-//FullReport and Summary are arbitrary objects
+// ReportBody defines a report for a given job
+// FullReport and Summary are arbitrary objects
 type ReportBody struct {
 	Artifacts  []JobBody   `json:"artifacts"`
 	FullReport interface{} `json:"full"`
@@ -54,7 +58,7 @@ type ReportBody struct {
 	Summary    summary     `json:"summary"`
 }
 
-//JobsFilter used to filter ListJobs results
+// JobsFilter is used to filter ListJobs results
 type JobsFilter struct {
 	Analyzer string `url:"analyzerFilter,omitempty"`
 	DataType string `url:"dataTypeFilter,omitempty"`
@@ -63,7 +67,7 @@ type JobsFilter struct {
 	limit    int    `url:"limit,omitempty"`
 }
 
-//Taxonomy represents taxonomy object in the report
+// Taxonomy represents a taxonomy object in a report
 type Taxonomy struct {
 	Predicate string `json:"predicate"`
 	Namespace string `json:"namespace"`
@@ -71,13 +75,13 @@ type Taxonomy struct {
 	Level     string `json:"level"`
 }
 
-//Taxonomies retrieves all taxonomies from JobReport
+// Taxonomies retrieves all taxonomies from a JobReport
 func (j *JobReport) Taxonomies() []Taxonomy {
 	return j.Report.Summary.Taxonomies
 }
 
-//ListJobs shows all available jobs
-//Returns slice of Jobs
+// ListJobs shows all available jobs
+// Returns a slice of Jobs
 func (c *Client) ListJobs() ([]Job, error) {
 	r, _, err := c.sendRequest("GET", jobsURL, nil)
 	if err != nil {
@@ -91,14 +95,14 @@ func (c *Client) ListJobs() ([]Job, error) {
 
 	j := []Job{}
 	if err := json.Unmarshal(r, &j); err != nil {
-		return nil, errors.New("Can't unmarshal Jobs list")
+		return nil, err
 	}
 
 	return j, nil
 }
 
-//ListFilteredJobs shows available filtered jobs
-//Returns slice of Jobs
+// ListFilteredJobs shows available filtered jobs
+// Returns a slice of Jobs
 func (c *Client) ListFilteredJobs(f *JobsFilter) ([]Job, error) {
 	v, _ := query.Values(f)
 
@@ -114,13 +118,13 @@ func (c *Client) ListFilteredJobs(f *JobsFilter) ([]Job, error) {
 
 	j := []Job{}
 	if err := json.Unmarshal(r, &j); err != nil {
-		return nil, errors.New("Can't unmarshal Jobs list")
+		return nil, err
 	}
 
 	return j, nil
 }
 
-//GetJob retrieves a Job by its ID
+// GetJob retrieves a Job by its ID
 func (c *Client) GetJob(id string) (*Job, error) {
 	r, s, err := c.sendRequest("GET", jobsURL+"/"+id, nil)
 	if err != nil {
@@ -128,12 +132,12 @@ func (c *Client) GetJob(id string) (*Job, error) {
 	}
 
 	if s == 404 {
-		return nil, errors.New("Job ID not found")
+		return nil, fmt.Errorf("Job ID %s is not found", id)
 	}
 
 	j := &Job{}
 	if err := json.Unmarshal(r, j); err != nil {
-		return nil, errors.New("Can't unmarshal Job body")
+		return nil, err
 	}
 
 	return j, nil
@@ -147,19 +151,19 @@ func (c *Client) WaitForJob(id string, duration string) (*Job, error) {
 	}
 
 	if s == 404 {
-		return nil, errors.New("Job ID not found")
+		return nil, fmt.Errorf("Job ID %s is not found", id)
 	}
 
 	j := &Job{}
 	if err := json.Unmarshal(r, j); err != nil {
-		return nil, errors.New("Can't unmarshal Job body")
+		return nil, err
 	}
 
 	return j, nil
 
 }
 
-//GetJobReport retrieves a JobReport by Job ID
+// GetJobReport retrieves a JobReport by Job ID
 func (c *Client) GetJobReport(id string) (*JobReport, error) {
 	r, s, err := c.sendRequest("GET", jobsURL+"/"+id+"/report", nil)
 	if err != nil {
@@ -167,18 +171,18 @@ func (c *Client) GetJobReport(id string) (*JobReport, error) {
 	}
 
 	if s == 404 {
-		return nil, errors.New("Job ID is not found")
+		return nil, fmt.Errorf("Job ID %s is not found", id)
 	}
 
 	j := &JobReport{}
 	if err := json.Unmarshal(r, j); err != nil {
-		return nil, errors.New("Can't unmarshal Job report body")
+		return nil, err
 	}
 
 	return j, nil
 }
 
-//DeleteJob deletes and existing job, identified by its ID
+// DeleteJob deletes an existing job identified by its ID
 func (c *Client) DeleteJob(id string) (bool, error) {
 	_, s, err := c.sendRequest("DELETE", jobsURL+"/"+id, nil)
 	if err != nil {
@@ -189,7 +193,7 @@ func (c *Client) DeleteJob(id string) (bool, error) {
 	case 200:
 		return true, nil
 	case 404:
-		return false, errors.New("Job not found")
+		return false, fmt.Errorf("Job ID %s is not found", id)
 	case 500:
 		return false, errors.New("Internal server error")
 	}

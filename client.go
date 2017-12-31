@@ -6,16 +6,17 @@ import (
 	"net/http"
 )
 
-//Client used to deal API location and basic auth (in future)
+// Client is used to deal with the API location and basic auth (in the future)
 type Client struct {
-	//Location is the Cortex base URL
+	// Location is the Cortex base URL
 	Location string
 
-	//Client used to communicate with the API
+	// Client is used to communicate with the API
 	Client *http.Client
 }
 
-//NewClient bootstraps Client to use later
+// NewClient bootstraps a Client
+// If there is a need to change the http.DefaultClient you should construct a Client struct by yourself
 func NewClient(location string) *Client {
 	return &Client{
 		Location: location,
@@ -23,8 +24,8 @@ func NewClient(location string) *Client {
 	}
 }
 
-//sendRequest used to abstract http requests from higher level functions
-//returns response body and status code
+// sendRequest is used to abstract http requests from the higher level functions
+// returns response body and status code
 func (c *Client) sendRequest(method string, path string, reqBody *bytes.Buffer) ([]byte, int, error) {
 	var req *http.Request
 	var err error

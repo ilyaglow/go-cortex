@@ -3,15 +3,15 @@ package gocortex
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"log"
 	"sync"
 )
 
 const analyzersURL = "/api/analyzer"
 
-//Analyzer defines data representing a specific analyzer
-//https://github.com/CERT-BDF/CortexDocs/blob/master/api/get-analyzer.md
+// Analyzer defines a specific Cortex Analyzer
+// https://github.com/CERT-BDF/CortexDocs/blob/master/api/get-analyzer.md
 type Analyzer struct {
 	ID           string   `json:"id"`
 	Name         string   `json:"name"`
@@ -20,8 +20,8 @@ type Analyzer struct {
 	DataTypeList []string `json:"dataTypeList"`
 }
 
-//ListAnalyzers retrieves all analyzers available
-//analyzers can be filtered by datatype parameter
+// ListAnalyzers retrieves all analyzers that are available.
+// Analyzers can be filtered by a datatype parameter. When "*" is used as a parameter, function returns all analyzers.
 func (c *Client) ListAnalyzers(datatype string) ([]Analyzer, error) {
 	requestURL := analyzersURL
 
@@ -36,13 +36,13 @@ func (c *Client) ListAnalyzers(datatype string) ([]Analyzer, error) {
 
 	a := []Analyzer{}
 	if err := json.Unmarshal(r, &a); err != nil {
-		return nil, errors.New("Can't unmarshal Analyzers list")
+		return nil, err
 	}
 
 	return a, nil
 }
 
-//GetAnalyzer retrieves Analyzer by its' ID
+// GetAnalyzer retrieves an Analyzer by its' ID
 func (c *Client) GetAnalyzer(id string) (*Analyzer, error) {
 	r, s, err := c.sendRequest("GET", analyzersURL+"/"+id, nil)
 	if err != nil {
@@ -50,18 +50,18 @@ func (c *Client) GetAnalyzer(id string) (*Analyzer, error) {
 	}
 
 	if s == 404 {
-		return nil, errors.New("Can't find analyzer")
+		return nil, fmt.Errorf("Can't find the analyzer with an id %s", id)
 	}
 
 	a := &Analyzer{}
 	if err := json.Unmarshal(r, a); err != nil {
-		return nil, errors.New("Can't unmarshal Analyzer body")
+		return nil, err
 	}
 
 	return a, nil
 }
 
-//RunAnalyzer runs specified analyzer for specified job
+// RunAnalyzer runs a selected analyzer for a specified job
 func (c *Client) RunAnalyzer(id string, data *JobBody) (*Job, error) {
 	b := new(bytes.Buffer)
 	json.NewEncoder(b).Encode(data)
@@ -73,36 +73,36 @@ func (c *Client) RunAnalyzer(id string, data *JobBody) (*Job, error) {
 
 	j := &Job{}
 	if err := json.Unmarshal(r, j); err != nil {
-		return nil, errors.New("Can't unmarshal Job")
+		return nil, err
 	}
 
 	return j, nil
 }
 
-//RunAnalyzerThenGetReport is a helper function that combines multiple functions to return JobReport
+// RunAnalyzerThenGetReport is a helper function that combines multiple functions to return JobReport providing more clear API
 func (c *Client) RunAnalyzerThenGetReport(id string, data *JobBody, timeout string) (*JobReport, error) {
 	j, err := c.RunAnalyzer(id, data)
 	if err != nil {
-		log.Printf("Failed to run analyzer %s", id)
+		log.Printf("Failed to run the analyzer %s", id)
 		return nil, err
 	}
 
 	w, err := c.WaitForJob(j.ID, timeout)
 	if err != nil {
-		log.Printf("Failed to wait for a job %s", j.ID)
+		log.Printf("Failed to wait for the job %s", j.ID)
 		return nil, err
 	}
 
 	r, err := c.GetJobReport(w.ID)
 	if err != nil {
-		log.Printf("Failed to get job report %s", w.ID)
+		log.Printf("Failed to get the job report %s", w.ID)
 		return nil, err
 	}
 
 	return r, nil
 }
 
-//AnalyzeData runs all analyzers suitable for a specified job and returns a channel
+// AnalyzeData runs all analyzers suitable for a specified job and returns a channel with reports
 func (c *Client) AnalyzeData(data *JobBody, timeout string) (<-chan *JobReport, error) {
 	var wg sync.WaitGroup
 	reports := make(chan *JobReport)
