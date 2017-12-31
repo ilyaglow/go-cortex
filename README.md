@@ -22,8 +22,8 @@ func main() {
 	// Create a client struct
 	client := gocortex.NewClient("http://127.0.0.1:9000")
 
-	// Fill the JobBody struct
-	j := &gocortex.JobBody{
+	// Fill the Artifact struct
+	j := &gocortex.Artifact{
 		Data: "8.8.8.8",
 		Attributes: gocortex.ArtifactAttributes{
 			DataType: "ip",

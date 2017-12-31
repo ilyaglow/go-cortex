@@ -62,7 +62,7 @@ func (c *Client) GetAnalyzer(id string) (*Analyzer, error) {
 }
 
 // RunAnalyzer runs a selected analyzer for a specified job
-func (c *Client) RunAnalyzer(id string, data *JobBody) (*Job, error) {
+func (c *Client) RunAnalyzer(id string, data *Artifact) (*Job, error) {
 	b := new(bytes.Buffer)
 	json.NewEncoder(b).Encode(data)
 
@@ -80,7 +80,7 @@ func (c *Client) RunAnalyzer(id string, data *JobBody) (*Job, error) {
 }
 
 // RunAnalyzerThenGetReport is a helper function that combines multiple functions to return JobReport providing more clear API
-func (c *Client) RunAnalyzerThenGetReport(id string, data *JobBody, timeout string) (*JobReport, error) {
+func (c *Client) RunAnalyzerThenGetReport(id string, data *Artifact, timeout string) (*JobReport, error) {
 	j, err := c.RunAnalyzer(id, data)
 	if err != nil {
 		log.Printf("Failed to run the analyzer %s", id)
@@ -103,7 +103,7 @@ func (c *Client) RunAnalyzerThenGetReport(id string, data *JobBody, timeout stri
 }
 
 // AnalyzeData runs all analyzers suitable for a specified job and returns a channel with reports
-func (c *Client) AnalyzeData(data *JobBody, timeout string) (<-chan *JobReport, error) {
+func (c *Client) AnalyzeData(data *Artifact, timeout string) (<-chan *JobReport, error) {
 	var wg sync.WaitGroup
 	reports := make(chan *JobReport)
 

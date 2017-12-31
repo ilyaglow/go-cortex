@@ -67,7 +67,7 @@ func TestRunAnalyzerAndGetJob(t *testing.T) {
 
 	client := NewClient("http://127.0.0.1:9000")
 
-	j := &JobBody{
+	j := &Artifact{
 		Data: "8.8.8.8",
 		Attributes: ArtifactAttributes{
 			DataType: "ip",
@@ -102,7 +102,7 @@ func TestRunAnalyzerThenGetReport(t *testing.T) {
 
 	client := NewClient("http://127.0.0.1:9000")
 
-	j := &JobBody{
+	j := &Artifact{
 		Data: "8.8.8.8",
 		Attributes: ArtifactAttributes{
 			DataType: "ip",
@@ -123,7 +123,7 @@ func TestAnalyzeData(t *testing.T) {
 
 	client := NewClient("http://127.0.0.1:9000")
 
-	j := &JobBody{
+	j := &Artifact{
 		Data: "8.8.8.8",
 		Attributes: ArtifactAttributes{
 			DataType: "ip",
