@@ -20,10 +20,10 @@ import (
 
 func main() {
 	// Create a client struct
-	client := gocortex.NewClient("http://127.0.0.1:9000")
+	client := cortex.NewClient("http://127.0.0.1:9000")
 
 	// Fill the Artifact struct
-	j := &gocortex.Artifact{
+	j := &cortex.Artifact{
 		Data: "8.8.8.8",
 		Attributes: gocortex.ArtifactAttributes{
 			DataType: "ip",

@@ -1,4 +1,4 @@
-package gocortex
+package cortex
 
 import (
 	"testing"
