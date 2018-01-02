@@ -1,4 +1,4 @@
-package gocortex
+package cortex
 
 import (
 	"encoding/json"
@@ -9,7 +9,8 @@ import (
 const analyzersURL = "/api/analyzer"
 
 // Analyzer defines a specific Cortex Analyzer
-// https://github.com/CERT-BDF/CortexDocs/blob/master/api/get-analyzer.md
+//
+// More info: https://github.com/CERT-BDF/CortexDocs/blob/master/api/get-analyzer.md
 type Analyzer struct {
 	ID           string   `json:"id"`
 	Name         string   `json:"name"`
@@ -19,7 +20,8 @@ type Analyzer struct {
 }
 
 // ListAnalyzers retrieves all analyzers that are available.
-// Analyzers can be filtered by a datatype parameter. When "*" is used as a parameter, function returns all analyzers.
+// Analyzers can be filtered by a datatype parameter.
+// When "*" is used as a parameter, function returns all analyzers.
 func (c *Client) ListAnalyzers(datatype string) ([]Analyzer, error) {
 	requestURL := analyzersURL
 
@@ -76,7 +78,8 @@ func (c *Client) RunAnalyzer(id string, data *Artifact) (*Job, error) {
 	return j, nil
 }
 
-// RunAnalyzerThenGetReport is a helper function that combines multiple functions to return JobReport providing more clear API
+// RunAnalyzerThenGetReport is a helper function that combines multiple
+// functions to return JobReport providing more clear API
 func (c *Client) RunAnalyzerThenGetReport(id string, data *Artifact, timeout string) (*JobReport, error) {
 	j, err := c.RunAnalyzer(id, data)
 	if err != nil {

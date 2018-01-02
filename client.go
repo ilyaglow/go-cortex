@@ -1,4 +1,4 @@
-package gocortex
+package cortex
 
 import (
 	"bytes"
@@ -10,18 +10,16 @@ import (
 
 // Client is used to deal with the API location and basic auth (in the future)
 type Client struct {
-	// Location is the Cortex base URL
-	Location string
+	Location string // Location is the Cortex base URL
 
-	// Client is used to communicate with the API
-	Client *http.Client
+	Client *http.Client // Client is used to communicate with the API
 
-	// Debug mode
-	Debug bool
+	Debug bool // Debug mode
 }
 
 // NewClient bootstraps a Client
-// If there is a need to change the http.DefaultClient you should construct a Client struct by yourself
+// If there is a need to change the http.DefaultClient you should
+// construct a Client struct by yourself
 func NewClient(location string) *Client {
 	return &Client{
 		Location: location,

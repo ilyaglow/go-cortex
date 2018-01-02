@@ -1,4 +1,4 @@
-package gocortex
+package cortex
 
 import (
 	"encoding/json"
@@ -21,7 +21,8 @@ type ArtifactAttributes struct {
 // JobBody is deprecated and is left for the compatilibity
 type JobBody Artifact
 
-// Artifact represents an artifact which can be supplied for the analysis and retrieved from a job later
+// Artifact represents an artifact which can be supplied for the analysis
+// and retrieved from a job later
 type Artifact struct {
 	Attributes ArtifactAttributes `json:"attributes"`
 	Data       string             `json:"data,omitempty"`
@@ -36,7 +37,8 @@ type Job struct {
 	Artifact   JobBody `json:"artifact"`
 }
 
-// JobReport represents a job response
+// JobReport represents a job response.
+//
 // More info: https://github.com/CERT-BDF/CortexDocs/blob/master/api/get-job-report.md
 type JobReport struct {
 	Job
@@ -48,8 +50,8 @@ type summary struct {
 	Taxonomies []Taxonomy `json:"taxonomies,omitempty"`
 }
 
-// ReportBody defines a report for a given job
-// FullReport and Summary are arbitrary objects
+// ReportBody defines a report for a given job.
+// FullReport and Summary are arbitrary objects.
 type ReportBody struct {
 	Artifacts  []JobBody   `json:"artifacts"`
 	FullReport interface{} `json:"full"`
@@ -80,7 +82,6 @@ func (j *JobReport) Taxonomies() []Taxonomy {
 }
 
 // ListJobs shows all available jobs
-// Returns a slice of Jobs
 func (c *Client) ListJobs() ([]Job, error) {
 	r, _, err := c.sendRequest("GET", jobsURL, nil)
 	if err != nil {
@@ -100,7 +101,6 @@ func (c *Client) ListJobs() ([]Job, error) {
 }
 
 // ListFilteredJobs shows available filtered jobs
-// Returns a slice of Jobs
 func (c *Client) ListFilteredJobs(f *JobsFilter) ([]Job, error) {
 	v, _ := query.Values(f)
 
@@ -142,8 +142,9 @@ func (c *Client) GetJob(id string) (*Job, error) {
 
 // WaitForJob do synchronously wait for a report
 // Duration should be in a string format, for example:
-// * 1minute
-// * 30seconds
+//	1minute
+//	30seconds
+//
 // If the duration is too small a report with a null value will be returned
 func (c *Client) WaitForJob(id string, duration string) (*Job, error) {
 	r, s, err := c.sendRequest("GET", jobsURL+"/"+id+"/waitreport?atMost="+duration, nil)
