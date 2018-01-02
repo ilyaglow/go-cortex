@@ -140,7 +140,11 @@ func (c *Client) GetJob(id string) (*Job, error) {
 	return j, nil
 }
 
-//WaitForJob do synchronously wait for the Job result
+// WaitForJob do synchronously wait for a report
+// Duration should be in a string format, for example:
+// * 1minute
+// * 30seconds
+// If the duration is too small a report with a null value will be returned
 func (c *Client) WaitForJob(id string, duration string) (*Job, error) {
 	r, s, err := c.sendRequest("GET", jobsURL+"/"+id+"/waitreport?atMost="+duration, nil)
 	if err != nil {
@@ -149,6 +153,10 @@ func (c *Client) WaitForJob(id string, duration string) (*Job, error) {
 
 	if s == 404 {
 		return nil, fmt.Errorf("Job ID %s is not found", id)
+	}
+
+	if s == 500 {
+		return nil, fmt.Errorf("Wait report request failed: %s", string(r))
 	}
 
 	j := &Job{}
