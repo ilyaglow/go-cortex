@@ -19,9 +19,26 @@ var getAnalyzerResponse = []byte(`
 }
 `)
 
+var a = &Artifact{
+	Data: "8.8.8.8",
+	Attributes: ArtifactAttributes{
+		DataType: "ip",
+		TLP:      2,
+	},
+}
+
+func TestListAnalyzersFailing(t *testing.T) {
+	nonvalidClient := NewClient("http://127.0.0.1:39900")
+
+	v, nerr := nonvalidClient.ListAnalyzers("*")
+	if v != nil && nerr == nil {
+		t.Error("ListAnalyzers should have failed")
+	}
+}
+
 func TestListAnalyzers(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping ListAnalyzers")
+		t.Skip("Skipping ListAnalyzers with a valid Cortex server")
 	}
 
 	client := NewClient("http://127.0.0.1:9000")
@@ -44,9 +61,18 @@ func TestListAnalyzers(t *testing.T) {
 	}
 }
 
+func TestGetAnalyzerFailing(t *testing.T) {
+	nonvalidClient := NewClient("http://127.0.0.1:39900")
+
+	v, nerr := nonvalidClient.GetAnalyzer("MaxMind_GeoIP_3_0")
+	if v != nil && nerr == nil {
+		t.Error("GetAnalyzer should have failed")
+	}
+}
+
 func TestGetAnalyzer(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping GetAnalyzer")
+		t.Skip("Skipping GetAnalyzer with a valid Cortex server")
 	}
 
 	client := NewClient("http://127.0.0.1:9000")
@@ -60,22 +86,29 @@ func TestGetAnalyzer(t *testing.T) {
 	}
 }
 
+func TestRunAnalyzerAndGetJobFailing(t *testing.T) {
+	nonvalidClient := NewClient("http://127.0.0.1:39900")
+
+	v, nerr := nonvalidClient.RunAnalyzer("MaxMind_GeoIP_3_0", a)
+	if v != nil && nerr == nil {
+		t.Error("RunAnalyzer should have failed")
+	}
+
+	job, gerr := nonvalidClient.GetJob("nonexistentid")
+	if job != nil && gerr == nil {
+		t.Error("GetJob should have failed")
+	}
+
+}
+
 func TestRunAnalyzerAndGetJob(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping RunAnalyzer")
+		t.Skip("Skipping RunAnalyzerAndGetJob with a valid Cortex server")
 	}
 
 	client := NewClient("http://127.0.0.1:9000")
 
-	j := &Artifact{
-		Data: "8.8.8.8",
-		Attributes: ArtifactAttributes{
-			DataType: "ip",
-			TLP:      2,
-		},
-	}
-
-	job, err := client.RunAnalyzer("MaxMind_GeoIP_3_0", j)
+	job, err := client.RunAnalyzer("MaxMind_GeoIP_3_0", a)
 	if err != nil {
 		t.Errorf("Can't run analyzer: %s", err.Error())
 	}
@@ -95,6 +128,14 @@ func TestRunAnalyzerAndGetJob(t *testing.T) {
 	}
 }
 
+func TestRunAnalyzerThenGetReportFailing(t *testing.T) {
+	nonvalidClient := NewClient("http://127.0.0.1:39900")
+	job, nerr := nonvalidClient.RunAnalyzerThenGetReport("MaxMind_GeoIP_3_0", a, "30seconds")
+	if job != nil && nerr == nil {
+		t.Error("RunAnalyzerTheGetReport should have failed")
+	}
+}
+
 func TestRunAnalyzerThenGetReport(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping RunAnalyzerThenGetReport")
@@ -102,15 +143,7 @@ func TestRunAnalyzerThenGetReport(t *testing.T) {
 
 	client := NewClient("http://127.0.0.1:9000")
 
-	j := &Artifact{
-		Data: "8.8.8.8",
-		Attributes: ArtifactAttributes{
-			DataType: "ip",
-			TLP:      2,
-		},
-	}
-
-	_, err := client.RunAnalyzerThenGetReport("MaxMind_GeoIP_3_0", j, "30seconds")
+	_, err := client.RunAnalyzerThenGetReport("MaxMind_GeoIP_3_0", a, "30seconds")
 	if err != nil {
 		t.Error("Can't run analyzer and get report")
 	}
@@ -123,15 +156,7 @@ func TestAnalyzeData(t *testing.T) {
 
 	client := NewClient("http://127.0.0.1:9000")
 
-	j := &Artifact{
-		Data: "8.8.8.8",
-		Attributes: ArtifactAttributes{
-			DataType: "ip",
-			TLP:      3,
-		},
-	}
-
-	messages, err := client.AnalyzeData(j, "1minute")
+	messages, err := client.AnalyzeData(a, "1minute")
 	if err != nil {
 		t.Error("Can't analyze data")
 	}
