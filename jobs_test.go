@@ -2,6 +2,7 @@ package gocortex
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -121,34 +122,152 @@ var getJobReportResponse = []byte(`
 }
 `)
 
+var jf = &JobsFilter{
+	Analyzer: "MaxMind_GeoIP_3_0",
+	DataType: "ip",
+}
+
+func TestListJobsFailing(t *testing.T) {
+	nonvalidClient := NewClient("http://127.0.0.1:39900")
+
+	v, nerr := nonvalidClient.ListJobs()
+	if v != nil && nerr == nil {
+		t.Error("ListJobs should have failed")
+	}
+}
+
 func TestListJobs(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping ListJobs")
+		t.Skip("Skipping ListJobs with a valid Cortex server")
 	}
 
 	client := NewClient("http://127.0.0.1:9000")
-
 	_, err := client.ListJobs()
 	if err != nil {
 		t.Error("Can't list jobs")
 	}
 }
 
+func TestListFilteredJobsFailing(t *testing.T) {
+	nonvalidClient := NewClient("http://127.0.0.1:39900")
+
+	v, nerr := nonvalidClient.ListFilteredJobs(jf)
+	if v != nil && nerr == nil {
+		t.Error("ListFilteredJobs should have failed")
+	}
+}
+
 func TestListFilteredJobs(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping ListFilteredJobs")
+		t.Skip("Skipping ListFilteredJobs with a valid Cortex server")
 	}
 
 	client := NewClient("http://127.0.0.1:9000")
 
-	jf := &JobsFilter{
-		Analyzer: "MaxMind_GeoIP_3_0",
-		DataType: "ip",
-	}
-
 	_, err := client.ListFilteredJobs(jf)
 	if err != nil {
 		t.Errorf("Can't list filtered jobs: %s", err.Error())
+	}
+
+	var njf = &JobsFilter{
+		Analyzer: "nonexistent",
+		DataType: "nonexistent",
+	}
+
+	nr, nerr := client.ListFilteredJobs(njf)
+	if nr != nil && nerr != nil {
+		t.Errorf("ListFilteredJobs should have returned nils")
+	}
+}
+
+func TestGetJobFailing(t *testing.T) {
+	nonvalidClient := NewClient("http://127.0.0.1:39900")
+
+	v, nerr := nonvalidClient.GetJob("sample")
+	if v != nil && nerr == nil {
+		t.Error("GetJobReport should have failed")
+	}
+}
+
+func TestGetJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping GetJobReport with a valid Cortex server")
+	}
+
+	client := NewClient("http://127.0.0.1:9000")
+	res, err := client.GetJob("nonexistent")
+	if res != nil && strings.Contains(err.Error(), "not found") != true {
+		t.Error("GetJob should have failed")
+	}
+}
+
+func TestGetJobReportFailing(t *testing.T) {
+	nonvalidClient := NewClient("http://127.0.0.1:39900")
+
+	v, nerr := nonvalidClient.GetJobReport("sample")
+	if v != nil && nerr == nil {
+		t.Error("GetJobReport should have failed")
+	}
+}
+
+func TestGetJobReport(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping GetJobReport with a valid Cortex server")
+	}
+
+	client := NewClient("http://127.0.0.1:9000")
+
+	result, err := client.GetJobReport("nonexistent")
+	if result != nil && strings.Contains(err.Error(), "not found") != true {
+		t.Error("GetJobReport should have returned nil")
+	}
+}
+
+func TestWaitForJobFailing(t *testing.T) {
+	nonvalidClient := NewClient("http://127.0.0.1:39900")
+
+	v, nerr := nonvalidClient.WaitForJob("sample", "30seconds")
+	if v != nil && nerr == nil {
+		t.Error("WaitForJob should have failed")
+	}
+}
+
+func TestWaitForJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping WaitForJob with a valid Cortex server")
+	}
+
+	client := NewClient("http://127.0.0.1:9000")
+
+	// Check for a non-existent job
+	r, err := client.WaitForJob("nonexistent", "1minute")
+	if r != nil && strings.Contains(err.Error(), "not found") != true {
+		t.Error("WaitForJob should have failed and return not found error")
+	}
+
+	// Wrong time duration format
+	f, ferr := client.WaitForJob("notmatter", "wrong")
+	if f != nil && ferr == nil {
+		t.Error("WaitForJob should have failed, because the Cortex should have returned an http code 500")
+	}
+
+}
+
+func TestDeleteJobFailing(t *testing.T) {
+	nonvalidClient := NewClient("http://127.0.0.1:39900")
+
+	v, nerr := nonvalidClient.DeleteJob("sample")
+	if v != false && nerr == nil {
+		t.Error("DeleteJob should have failed")
+	}
+}
+
+func TestDeleteJob(t *testing.T) {
+	client := NewClient("http://127.0.0.1:9000")
+
+	result, err := client.DeleteJob("nonexistent")
+	if result != false && strings.Contains(err.Error(), "not found") != true {
+		t.Error("DeleteJob should have returned nil")
 	}
 }
 
