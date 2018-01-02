@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/google/go-querystring/query"
 )
@@ -89,7 +88,6 @@ func (c *Client) ListJobs() ([]Job, error) {
 	}
 
 	if string(r) == "[]" {
-		log.Println("No jobs available")
 		return nil, nil
 	}
 
@@ -112,7 +110,6 @@ func (c *Client) ListFilteredJobs(f *JobsFilter) ([]Job, error) {
 	}
 
 	if string(r) == "[]" {
-		log.Println("No jobs available")
 		return nil, nil
 	}
 

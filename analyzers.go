@@ -1,10 +1,8 @@
 package gocortex
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 )
 
@@ -63,10 +61,9 @@ func (c *Client) GetAnalyzer(id string) (*Analyzer, error) {
 
 // RunAnalyzer runs a selected analyzer for a specified job
 func (c *Client) RunAnalyzer(id string, data *Artifact) (*Job, error) {
-	b := new(bytes.Buffer)
-	json.NewEncoder(b).Encode(data)
+	jsonData, _ := json.Marshal(data)
 
-	r, _, err := c.sendRequest("POST", analyzersURL+"/"+id+"/run", b)
+	r, _, err := c.sendRequest("POST", analyzersURL+"/"+id+"/run", &jsonData)
 	if err != nil {
 		return nil, err
 	}
@@ -83,19 +80,19 @@ func (c *Client) RunAnalyzer(id string, data *Artifact) (*Job, error) {
 func (c *Client) RunAnalyzerThenGetReport(id string, data *Artifact, timeout string) (*JobReport, error) {
 	j, err := c.RunAnalyzer(id, data)
 	if err != nil {
-		log.Printf("Failed to run the analyzer %s", id)
+		c.log(fmt.Sprintf("Failed to run the analyzer %s", id))
 		return nil, err
 	}
 
 	w, err := c.WaitForJob(j.ID, timeout)
 	if err != nil {
-		log.Printf("Failed to wait for the job %s", j.ID)
+		c.log(fmt.Sprintf("Failed to wait for the job %s", j.ID))
 		return nil, err
 	}
 
 	r, err := c.GetJobReport(w.ID)
 	if err != nil {
-		log.Printf("Failed to get the job report %s", w.ID)
+		c.log(fmt.Sprintf("Failed to get the job report %s", w.ID))
 		return nil, err
 	}
 
@@ -121,7 +118,7 @@ func (c *Client) AnalyzeData(data *Artifact, timeout string) (<-chan *JobReport,
 			if err == nil {
 				reports <- report
 			} else {
-				log.Printf("Failed to process %s with %s", data.Data, an.Name)
+				c.log(fmt.Sprintf("Failed to process %s with %s", data.Data, an.Name))
 			}
 		}(a)
 	}
