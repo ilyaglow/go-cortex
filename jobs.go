@@ -30,11 +30,11 @@ type Artifact struct {
 
 // Job defines an analysis job
 type Job struct {
-	ID         string  `json:"id"`
-	AnalyzerID string  `json:"analyzerId"`
-	Status     string  `json:"status"`
-	Date       int64   `json:"date"`
-	Artifact   JobBody `json:"artifact"`
+	ID         string   `json:"id"`
+	AnalyzerID string   `json:"analyzerId"`
+	Status     string   `json:"status"`
+	Date       int64    `json:"date"`
+	Artifact   Artifact `json:"artifact"`
 }
 
 // JobReport represents a job response.
@@ -53,7 +53,7 @@ type summary struct {
 // ReportBody defines a report for a given job.
 // FullReport and Summary are arbitrary objects.
 type ReportBody struct {
-	Artifacts  []JobBody   `json:"artifacts"`
+	Artifacts  []Artifact  `json:"artifacts"`
 	FullReport interface{} `json:"full"`
 	Success    bool        `json:"success"`
 	Summary    summary     `json:"summary"`
