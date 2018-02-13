@@ -25,7 +25,7 @@ func main() {
 	// Fill the Artifact struct
 	j := &cortex.Artifact{
 		Data: "8.8.8.8",
-		Attributes: gocortex.ArtifactAttributes{
+		Attributes: cortex.ArtifactAttributes{
 			DataType: "ip",
 			TLP:      3,
 		},
