@@ -3,8 +3,10 @@ package cortex
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
 )
 
@@ -58,6 +60,52 @@ func (c *Client) sendRequest(method string, path string, reqBody *[]byte) ([]byt
 	res, err := c.Client.Do(req)
 	if err != nil {
 		return nil, 0, err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	c.log(fmt.Sprintf("Response status code: %d, data: %s", res.StatusCode, string(body)))
+
+	return body, res.StatusCode, nil
+}
+
+// sendFileRequest sends the file to analyze
+func (c *Client) sendFileRequest(attr *[]byte, path string, filename string, f io.Reader) ([]byte, int, error) {
+	var part io.Writer
+	var err error
+	r, w := io.Pipe()
+	tr := io.TeeReader(f, w)
+
+	mpw := multipart.NewWriter(w)
+	go func() {
+		defer w.Close()
+
+		if part, err = mpw.CreateFormFile("attachment", filename); err != nil {
+			c.log(err.Error())
+		}
+
+		if _, err = io.Copy(part, tr); err != nil {
+			c.log(err.Error())
+		}
+
+		if err = mpw.Close(); err != nil {
+			c.log(err.Error())
+		}
+	}()
+
+	if part, err = mpw.CreateFormField("_json"); err != nil {
+		c.log(err.Error())
+		return nil, 0, err
+	}
+
+	if _, err = part.Write(*attr); err != nil {
+		c.log(err.Error())
+		return nil, 0, err
+	}
+
+	res, err := http.Post(c.Location+path, mpw.FormDataContentType(), r)
+	if err != nil {
+		c.log(err.Error())
 	}
 	defer res.Body.Close()
 
