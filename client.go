@@ -70,40 +70,38 @@ func (c *Client) sendRequest(method string, path string, reqBody *[]byte) ([]byt
 }
 
 // sendFileRequest sends the file to analyze
-func (c *Client) sendFileRequest(attr *[]byte, path string, filename string, f io.Reader) ([]byte, int, error) {
-	var part io.Writer
-	var err error
-	r, w := io.Pipe()
-	tr := io.TeeReader(f, w)
-
+func (c *Client) sendFileRequest(attr []byte, path string, filename string, f io.Reader) ([]byte, int, error) {
+	w := new(bytes.Buffer)
 	mpw := multipart.NewWriter(w)
-	go func() {
-		defer w.Close()
-
-		if part, err = mpw.CreateFormFile("attachment", filename); err != nil {
-			c.log(err.Error())
-		}
-
-		if _, err = io.Copy(part, tr); err != nil {
-			c.log(err.Error())
-		}
-
-		if err = mpw.Close(); err != nil {
-			c.log(err.Error())
-		}
-	}()
-
-	if part, err = mpw.CreateFormField("_json"); err != nil {
+	fpart, err := mpw.CreateFormFile("data", filename)
+	if err != nil {
 		c.log(err.Error())
 		return nil, 0, err
 	}
 
-	if _, err = part.Write(*attr); err != nil {
+	_, err = io.Copy(fpart, f)
+	if err != nil {
 		c.log(err.Error())
 		return nil, 0, err
 	}
 
-	res, err := http.Post(c.Location+path, mpw.FormDataContentType(), r)
+	jpart, err := mpw.CreateFormField("_json")
+	if err != nil {
+		c.log(err.Error())
+		return nil, 0, err
+	}
+
+	_, err = jpart.Write(attr)
+	if err != nil {
+		c.log(err.Error())
+		return nil, 0, err
+	}
+	if err := mpw.Close(); err != nil {
+		c.log(err.Error())
+		return nil, 0, err
+	}
+
+	res, err := http.Post(c.Location+path, mpw.FormDataContentType(), w)
 	if err != nil {
 		c.log(err.Error())
 	}
