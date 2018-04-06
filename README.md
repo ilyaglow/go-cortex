@@ -9,6 +9,8 @@
 go get -u github.com/ilyaglow/go-cortex
 ```
 
+### Analyze simple string type observable
+
 ```go
 package main
 
@@ -43,6 +45,55 @@ func main() {
 		for _, t := range txs {
 			log.Printf("\"%s:%s\"=\"%s\"", t.Namespace, t.Predicate, t.Value)
 		}
+	}
+}
+```
+
+### Analyze file type observable
+
+Basically, any type that implements `io.Reader` could be analyzed.
+
+```go
+package main
+
+import (
+	"log"
+	"os"
+
+	"github.com/ilyaglow/go-cortex"
+)
+
+func main() {
+
+	client := cortex.NewClient("http://127.0.0.1:9000")
+
+	// Open the file
+	fname := "filename.exe"
+	f, err := os.Open(fname)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	freports, err := client.AnalyzeData(&cortex.FileArtifact{
+		FileArtifactMeta: cortex.FileArtifactMeta{
+			DataType: "file",
+			TLP:      3,
+		},
+		FileName: fname,
+		Reader:   f,
+	}, "5minutes")
+	if err != nil {
+		panic(err)
+	}
+
+	for m := range freports {
+		if m.Status == "Failure" {
+			log.Printf("%s failed with an error: %s\n", m.AnalyzerID, m.Report.ErrorMessage)
+			continue
+		}
+
+		log.Println(m.Report.FullReport)
 	}
 }
 ```
