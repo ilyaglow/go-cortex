@@ -122,6 +122,39 @@ var getJobReportResponse = []byte(`
 }
 `)
 
+var failedResponse = []byte(`
+{
+  "id": "wIBtf1Y39UvpKtxR",
+  "analyzerId": "OTXQuery_2_0",
+  "status": "Failure",
+  "date": 1523005226125,
+  "artifact": {
+    "attributes": {
+      "dataType": "file",
+      "tlp": 3,
+      "content-type": "application/octet-stream",
+      "filename": "filename.exe"
+    }
+  },
+  "report": {
+    "errorMessage": "Missing OTX API key",
+    "input": {
+      "tlp": 3,
+      "dataType": "file",
+      "content-type": "application/octet-stream",
+      "filename": "filename.exe",
+      "file": "/tmp/cortex-8221929232924675987-datafile",
+      "config": {
+        "max_tlp": 3,
+        "check_tlp": true,
+        "service": "query"
+      }
+    },
+    "success": false
+  }
+}
+`)
+
 var jf = &JobsFilter{
 	Analyzer: "MaxMind_GeoIP_3_0",
 	DataType: "ip",
@@ -365,5 +398,73 @@ func TestJobReport(t *testing.T) {
 				t.Error("Wrong artifact data value")
 			}
 		}
+	}
+}
+
+func TestFailedJobReport(t *testing.T) {
+	j := &JobReport{}
+
+	if err := json.Unmarshal(failedResponse, j); err != nil {
+		t.Error("Can't unmarshal predefined failed analysis response")
+	}
+
+	if j.ID != "wIBtf1Y39UvpKtxR" {
+		t.Error("Wrong ID")
+	}
+
+	if j.AnalyzerID != "OTXQuery_2_0" {
+		t.Error("Wrong analyzer ID")
+	}
+
+	if j.Status != "Failure" {
+		t.Error("Wrong Job status")
+	}
+
+	if j.Date != 1523005226125 {
+		t.Error("Wrong datetime")
+	}
+
+	if j.Artifact.Attributes.DataType != "file" {
+		t.Error("Wrong attribute datatype")
+	}
+
+	if j.Artifact.Attributes.TLP != 3 {
+		t.Error("Wrong TLP")
+	}
+
+	if j.Artifact.Attributes.ContentType != "application/octet-stream" {
+		t.Error("Wrong content type")
+	}
+
+	if j.Artifact.Attributes.Filename != "filename.exe" {
+		t.Error("Wrong filename")
+	}
+
+	if j.Report.ErrorMessage != "Missing OTX API key" {
+		t.Error("Wrong error message")
+	}
+
+	if j.Report.Input.TLP != 3 {
+		t.Error("Wrong input TLP")
+	}
+
+	if j.Report.Input.DataType != "file" {
+		t.Error("Wrong input datatype")
+	}
+
+	if j.Report.Input.ContentType != "application/octet-stream" {
+		t.Error("wrong content type")
+	}
+
+	if j.Report.Input.Filename != "filename.exe" {
+		t.Error("Wrong input filename")
+	}
+
+	if j.Report.Input.File != "/tmp/cortex-8221929232924675987-datafile" {
+		t.Error("Wrong input file")
+	}
+
+	if j.Report.Success != false {
+		t.Error("Wrong report status")
 	}
 }
