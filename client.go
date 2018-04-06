@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -12,11 +11,9 @@ import (
 
 // Client is used to deal with the API location and basic auth (in the future)
 type Client struct {
-	Location string // Location is the Cortex base URL
-
-	Client *http.Client // Client is used to communicate with the API
-
-	Debug bool // Debug mode
+	Location string       // Location is the Cortex base URL
+	Client   *http.Client // Client is used to communicate with the API
+	Debug    bool         // Debug mode
 }
 
 // NewClient bootstraps a Client
@@ -32,7 +29,7 @@ func NewClient(location string) *Client {
 
 // sendRequest is used to abstract http requests from the higher level functions
 // returns response body and status code
-func (c *Client) sendRequest(method string, path string, reqBody *[]byte) ([]byte, int, error) {
+func (c *Client) sendRequest(method string, path string, reqBody *[]byte) (*http.Response, error) {
 	var req *http.Request
 	var err error
 	var loc string
@@ -44,14 +41,14 @@ func (c *Client) sendRequest(method string, path string, reqBody *[]byte) ([]byt
 
 		req, err = http.NewRequest(method, loc, bytes.NewBuffer(*reqBody))
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 	} else {
 		c.log(fmt.Sprintf("%s %s", method, path))
 
 		req, err = http.NewRequest(method, loc, nil)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 	}
 
@@ -59,58 +56,51 @@ func (c *Client) sendRequest(method string, path string, reqBody *[]byte) ([]byt
 
 	res, err := c.Client.Do(req)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
-	c.log(fmt.Sprintf("Response status code: %d, data: %s", res.StatusCode, string(body)))
-
-	return body, res.StatusCode, nil
+	return res, nil
 }
 
-// sendFileRequest sends the file to analyze
-func (c *Client) sendFileRequest(attr []byte, path string, filename string, f io.Reader) ([]byte, int, error) {
+// sendFileRequest gets the data from io.Reader and sends it to Cortex
+func (c *Client) sendFileRequest(attr []byte, path string, filename string, f io.Reader) (*http.Response, error) {
 	w := new(bytes.Buffer)
 	mpw := multipart.NewWriter(w)
 	fpart, err := mpw.CreateFormFile("data", filename)
 	if err != nil {
 		c.log(err.Error())
-		return nil, 0, err
+		return nil, err
 	}
 
 	_, err = io.Copy(fpart, f)
 	if err != nil {
 		c.log(err.Error())
-		return nil, 0, err
+		return nil, err
 	}
 
 	jpart, err := mpw.CreateFormField("_json")
 	if err != nil {
 		c.log(err.Error())
-		return nil, 0, err
+		return nil, err
 	}
 
 	_, err = jpart.Write(attr)
 	if err != nil {
 		c.log(err.Error())
-		return nil, 0, err
+		return nil, err
 	}
 	if err := mpw.Close(); err != nil {
 		c.log(err.Error())
-		return nil, 0, err
+		return nil, err
 	}
 
 	res, err := http.Post(c.Location+path, mpw.FormDataContentType(), w)
 	if err != nil {
 		c.log(err.Error())
+		return nil, err
 	}
-	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
-	c.log(fmt.Sprintf("Response status code: %d, data: %s", res.StatusCode, string(body)))
-
-	return body, res.StatusCode, nil
+	return res, nil
 }
 
 // log is used to print debug messages
