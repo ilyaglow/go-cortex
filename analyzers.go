@@ -3,6 +3,9 @@ package cortex
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"sync"
 )
 
@@ -29,59 +32,80 @@ func (c *Client) ListAnalyzers(datatype string) ([]Analyzer, error) {
 		requestURL = analyzersURL + "/type/" + datatype
 	}
 
-	r, _, err := c.sendRequest("GET", requestURL, nil)
+	r, err := c.sendRequest("GET", requestURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	a := []Analyzer{}
-	if err := json.Unmarshal(r, &a); err != nil {
+	var a []Analyzer
+	if err := json.NewDecoder(r.Body).Decode(&a); err != nil {
 		return nil, err
 	}
+	r.Body.Close()
 
 	return a, nil
 }
 
 // GetAnalyzer retrieves an Analyzer by its' ID
 func (c *Client) GetAnalyzer(id string) (*Analyzer, error) {
-	r, s, err := c.sendRequest("GET", analyzersURL+"/"+id, nil)
+	r, err := c.sendRequest("GET", analyzersURL+"/"+id, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if s == 404 {
+	if r.StatusCode == 404 {
 		return nil, fmt.Errorf("Can't find the analyzer with an id %s", id)
 	}
 
 	a := &Analyzer{}
-	if err := json.Unmarshal(r, a); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(a); err != nil {
 		return nil, err
 	}
+	r.Body.Close()
 
 	return a, nil
 }
 
 // RunAnalyzer runs a selected analyzer for a specified job
-func (c *Client) RunAnalyzer(id string, data *Artifact) (*Job, error) {
-	jsonData, _ := json.Marshal(data)
+func (c *Client) RunAnalyzer(id string, obs Observable) (*Job, error) {
+	var resp *http.Response
+	var err error
 
-	r, _, err := c.sendRequest("POST", analyzersURL+"/"+id+"/run", &jsonData)
-	if err != nil {
-		return nil, err
+	switch obs.Type() {
+	case "file":
+		far := obs.(*FileArtifact)
+		obsData, err := json.Marshal(far.FileArtifactMeta)
+		if err != nil {
+			return nil, err
+		}
+		resp, err = c.sendFileRequest(obsData, analyzersURL+"/"+id+"/run", far.FileName, far.Reader)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		obsData, err := json.Marshal(obs.(*Artifact))
+		if err != nil {
+			return nil, err
+		}
+		resp, err = c.sendRequest("POST", analyzersURL+"/"+id+"/run", &obsData)
+		if err != nil {
+			return nil, err
+		}
+
 	}
-
 	j := &Job{}
-	if err := json.Unmarshal(r, j); err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(j); err != nil {
 		return nil, err
 	}
+	// resp.Body.Close()
 
 	return j, nil
 }
 
 // RunAnalyzerThenGetReport is a helper function that combines multiple
 // functions to return JobReport providing more clear API
-func (c *Client) RunAnalyzerThenGetReport(id string, data *Artifact, timeout string) (*JobReport, error) {
-	j, err := c.RunAnalyzer(id, data)
+func (c *Client) RunAnalyzerThenGetReport(id string, obs Observable, timeout string) (*JobReport, error) {
+	j, err := c.RunAnalyzer(id, obs)
 	if err != nil {
 		c.log(fmt.Sprintf("Failed to run the analyzer %s", id))
 		return nil, err
@@ -103,27 +127,29 @@ func (c *Client) RunAnalyzerThenGetReport(id string, data *Artifact, timeout str
 }
 
 // AnalyzeData runs all analyzers suitable for a specified job and returns a channel with reports
-func (c *Client) AnalyzeData(data *Artifact, timeout string) (<-chan *JobReport, error) {
+func (c *Client) AnalyzeData(obs Observable, timeout string) (<-chan *JobReport, error) {
 	var wg sync.WaitGroup
 	reports := make(chan *JobReport)
 
-	analyzers, err := c.ListAnalyzers(data.Attributes.DataType)
+	analyzers, err := c.ListAnalyzers(obs.Type())
 	if err != nil {
 		return nil, err
 	}
+	log.Println(analyzers)
 
 	wg.Add(len(analyzers))
-	for _, a := range analyzers {
-		go func(an Analyzer) {
-			defer wg.Done()
 
-			report, err := c.RunAnalyzerThenGetReport(an.ID, data, timeout)
-			if err == nil {
-				reports <- report
-			} else {
-				c.log(fmt.Sprintf("Failed to process %s with %s", data.Data, an.Name))
-			}
-		}(a)
+	switch obs.(type) {
+	case *FileArtifact:
+		reports, err = c.analyzeFile(analyzers, obs.(*FileArtifact), &wg, timeout, reports)
+		if err != nil {
+			return nil, err
+		}
+	case *Artifact:
+		reports, err = c.analyzeString(analyzers, obs, &wg, timeout, reports)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	go func() {
@@ -132,4 +158,67 @@ func (c *Client) AnalyzeData(data *Artifact, timeout string) (<-chan *JobReport,
 	}()
 
 	return reports, nil
+}
+
+func (c *Client) analyzeFile(analyzers []Analyzer, fa *FileArtifact, wg *sync.WaitGroup, timeout string, rch chan *JobReport) (chan *JobReport, error) {
+	var readPipes []*io.PipeReader
+	var writePipes []*io.PipeWriter
+
+	for _, a := range analyzers {
+		fr, fw := io.Pipe()
+		readPipes = append(readPipes, fr)
+		writePipes = append(writePipes, fw)
+
+		o := &FileArtifact{
+			FileName:         fa.FileName,
+			Reader:           fr,
+			FileArtifactMeta: fa.FileArtifactMeta,
+		}
+
+		go func(an Analyzer, f io.Reader) {
+			defer wg.Done()
+			c.log(fmt.Sprintf("Starting %s analyzer", an.Name))
+
+			report, err := c.RunAnalyzerThenGetReport(an.ID, o, timeout)
+			if err == nil && report != nil {
+				rch <- report
+			} else {
+				c.log(fmt.Sprintf("Failed to process %s with %s", o.Description(), an.Name))
+			}
+		}(a, fr)
+	}
+
+	wr := make([]io.Writer, len(writePipes))
+	for i := range writePipes {
+		wr[i] = writePipes[i]
+	}
+
+	mw := io.MultiWriter(wr...)
+	go func() {
+		if _, err := io.Copy(mw, fa.Reader); err != nil {
+			log.Fatal(err)
+		}
+		for i := range writePipes {
+			writePipes[i].Close()
+		}
+	}()
+
+	return rch, nil
+}
+
+func (c *Client) analyzeString(analyzers []Analyzer, obs Observable, wg *sync.WaitGroup, timeout string, rch chan *JobReport) (chan *JobReport, error) {
+	for _, a := range analyzers {
+		go func(an Analyzer) {
+			defer wg.Done()
+
+			report, err := c.RunAnalyzerThenGetReport(an.ID, obs, timeout)
+			if err == nil {
+				rch <- report
+			} else {
+				c.log(fmt.Sprintf("Failed to process %s with %s", obs.Description(), an.Name))
+			}
+		}(a)
+	}
+
+	return rch, nil
 }

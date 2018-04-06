@@ -3,6 +3,7 @@ package cortex
 import (
 	"encoding/json"
 	"log"
+	"os"
 	"testing"
 	"time"
 )
@@ -26,6 +27,8 @@ var a = &Artifact{
 		TLP:      2,
 	},
 }
+
+const analyzedFile = "README.md"
 
 func TestListAnalyzersFailing(t *testing.T) {
 	nonvalidClient := NewClient("http://127.0.0.1:39900")
@@ -157,6 +160,45 @@ func TestAnalyzeData(t *testing.T) {
 	client := NewClient("http://127.0.0.1:9000")
 
 	messages, err := client.AnalyzeData(a, "1minute")
+	if err != nil {
+		t.Error("Can't analyze data")
+	}
+	for m := range messages {
+		log.Printf("%s: %s", m.AnalyzerID, m.Status)
+
+		status, err := client.DeleteJob(m.ID)
+		if err != nil {
+			t.Errorf("Can't delete a job: %s", err.Error())
+		}
+
+		if status != true {
+			t.Error("Job has not been deleted")
+		}
+	}
+}
+
+func TestAnalyzeReader(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping AnalyzeData for files")
+	}
+
+	client := NewClient("http://127.0.0.1:9000")
+
+	f, err := os.Open(analyzedFile)
+	if err != nil {
+		t.Error("can't open readme file")
+	}
+
+	fa := &FileArtifact{
+		Reader:   f,
+		FileName: analyzedFile,
+		FileArtifactMeta: FileArtifactMeta{
+			DataType: "file",
+			TLP:      1,
+		},
+	}
+
+	messages, err := client.AnalyzeData(fa, "1minute")
 	if err != nil {
 		t.Error("Can't analyze data")
 	}

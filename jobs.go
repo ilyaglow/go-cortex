@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/google/go-querystring/query"
 )
@@ -18,14 +19,60 @@ type ArtifactAttributes struct {
 	Filename    string `json:"filename,omitempty"`
 }
 
+// JobInput is used to track failed jobs
+type JobInput struct {
+	ArtifactAttributes
+	File   string                 `json:"file,omitempty"`
+	Config map[string]interface{} `json:"config,omitempty"`
+}
+
 // JobBody is deprecated and is left for the compatilibity
 type JobBody Artifact
 
-// Artifact represents an artifact which can be supplied for the analysis
+// Observable is an interface for string type artifact and file type artifact
+type Observable interface {
+	Type() string
+	Description() string
+}
+
+// Artifact represents a basic artifact which can be supplied for the analysis
 // and retrieved from a job later
 type Artifact struct {
 	Attributes ArtifactAttributes `json:"attributes"`
 	Data       string             `json:"data,omitempty"`
+}
+
+// Type returns datatype for an artifact
+func (a *Artifact) Type() string {
+	return a.Attributes.DataType
+}
+
+// Description returns artifact data value
+func (a *Artifact) Description() string {
+	return a.Data
+}
+
+// FileArtifact represents a file observable
+type FileArtifact struct {
+	FileArtifactMeta
+	Reader   io.Reader // anything that implements io.Reader (os.File or http.Response.Body or whatever)
+	FileName string    // could be filename or the URL
+}
+
+// FileArtifactMeta contains meta fields for FileArtifact
+type FileArtifactMeta struct {
+	DataType string `json:"dataType"`
+	TLP      int    `json:"tlp"`
+}
+
+// Type implements observable function and should return "file"
+func (f *FileArtifact) Type() string {
+	return f.FileArtifactMeta.DataType
+}
+
+// Description returns file name or URL
+func (f *FileArtifact) Description() string {
+	return f.FileName
 }
 
 // Job defines an analysis job
@@ -53,10 +100,12 @@ type summary struct {
 // ReportBody defines a report for a given job.
 // FullReport and Summary are arbitrary objects.
 type ReportBody struct {
-	Artifacts  []Artifact  `json:"artifacts"`
-	FullReport interface{} `json:"full"`
-	Success    bool        `json:"success"`
-	Summary    summary     `json:"summary"`
+	Artifacts    []Artifact  `json:"artifacts,omitempty"`
+	FullReport   interface{} `json:"full,omitempty"`
+	Success      bool        `json:"success,omitempty"`
+	Summary      summary     `json:"summary,omitempty"`
+	ErrorMessage string      `json:"errorMessage,omitempty"`
+	Input        JobInput    `json:"input,omitempty"`
 }
 
 // JobsFilter is used to filter ListJobs results
@@ -83,19 +132,16 @@ func (j *JobReport) Taxonomies() []Taxonomy {
 
 // ListJobs shows all available jobs
 func (c *Client) ListJobs() ([]Job, error) {
-	r, _, err := c.sendRequest("GET", jobsURL, nil)
+	r, err := c.sendRequest("GET", jobsURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if string(r) == "[]" {
-		return nil, nil
-	}
-
-	j := []Job{}
-	if err := json.Unmarshal(r, &j); err != nil {
+	var j []Job
+	if err := json.NewDecoder(r.Body).Decode(&j); err != nil {
 		return nil, err
 	}
+	r.Body.Close()
 
 	return j, nil
 }
@@ -104,38 +150,36 @@ func (c *Client) ListJobs() ([]Job, error) {
 func (c *Client) ListFilteredJobs(f *JobsFilter) ([]Job, error) {
 	v, _ := query.Values(f)
 
-	r, _, err := c.sendRequest("GET", jobsURL+"?"+v.Encode(), nil)
+	r, err := c.sendRequest("GET", jobsURL+"?"+v.Encode(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if string(r) == "[]" {
-		return nil, nil
-	}
-
-	j := []Job{}
-	if err := json.Unmarshal(r, &j); err != nil {
+	var j []Job
+	if err := json.NewDecoder(r.Body).Decode(&j); err != nil {
 		return nil, err
 	}
+	r.Body.Close()
 
 	return j, nil
 }
 
 // GetJob retrieves a Job by its ID
 func (c *Client) GetJob(id string) (*Job, error) {
-	r, s, err := c.sendRequest("GET", jobsURL+"/"+id, nil)
+	r, err := c.sendRequest("GET", jobsURL+"/"+id, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if s == 404 {
+	if r.StatusCode == 404 {
 		return nil, fmt.Errorf("Job ID %s is not found", id)
 	}
 
 	j := &Job{}
-	if err := json.Unmarshal(r, j); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(j); err != nil {
 		return nil, err
 	}
+	r.Body.Close()
 
 	return j, nil
 }
@@ -147,23 +191,24 @@ func (c *Client) GetJob(id string) (*Job, error) {
 //
 // If the duration is too small a report with a null value will be returned
 func (c *Client) WaitForJob(id string, duration string) (*Job, error) {
-	r, s, err := c.sendRequest("GET", jobsURL+"/"+id+"/waitreport?atMost="+duration, nil)
+	r, err := c.sendRequest("GET", jobsURL+"/"+id+"/waitreport?atMost="+duration, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if s == 404 {
+	if r.StatusCode == 404 {
 		return nil, fmt.Errorf("Job ID %s is not found", id)
 	}
 
-	if s == 500 {
-		return nil, fmt.Errorf("Wait report request failed: %s", string(r))
+	if r.StatusCode == 500 {
+		return nil, fmt.Errorf("Wait report request failed: %s", id)
 	}
 
 	j := &Job{}
-	if err := json.Unmarshal(r, j); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(j); err != nil {
 		return nil, err
 	}
+	r.Body.Close()
 
 	return j, nil
 
@@ -171,31 +216,32 @@ func (c *Client) WaitForJob(id string, duration string) (*Job, error) {
 
 // GetJobReport retrieves a JobReport by Job ID
 func (c *Client) GetJobReport(id string) (*JobReport, error) {
-	r, s, err := c.sendRequest("GET", jobsURL+"/"+id+"/report", nil)
+	r, err := c.sendRequest("GET", jobsURL+"/"+id+"/report", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if s == 404 {
+	if r.StatusCode == 404 {
 		return nil, fmt.Errorf("Job ID %s is not found", id)
 	}
 
 	j := &JobReport{}
-	if err := json.Unmarshal(r, j); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(j); err != nil {
 		return nil, err
 	}
+	r.Body.Close()
 
 	return j, nil
 }
 
 // DeleteJob deletes an existing job identified by its ID
 func (c *Client) DeleteJob(id string) (bool, error) {
-	_, s, err := c.sendRequest("DELETE", jobsURL+"/"+id, nil)
+	r, err := c.sendRequest("DELETE", jobsURL+"/"+id, nil)
 	if err != nil {
 		return false, err
 	}
 
-	switch s {
+	switch r.StatusCode {
 	case 200:
 		return true, nil
 	case 404:
