@@ -19,11 +19,13 @@ type ArtifactAttributes struct {
 	Filename    string `json:"filename,omitempty"`
 }
 
-// JobInput is used to track failed jobs
+// JobInput is used to track failed jobs and work with analyzer's input
 type JobInput struct {
 	ArtifactAttributes
-	File   string                 `json:"file,omitempty"`
-	Config map[string]interface{} `json:"config,omitempty"`
+	Data   string            `json:"data,omitempty"`
+	File   string            `json:"file,omitempty"`
+	Config cfg               `json:"config,omitempty"`
+	Proxy  map[string]string `json:"proxy,omitempty"`
 }
 
 // JobBody is deprecated and is left for the compatilibity
@@ -92,8 +94,8 @@ type JobReport struct {
 	Report ReportBody `json:"report"`
 }
 
-// summary is a customized report object which may have taxonomies
-type summary struct {
+// Summary is a customized report object which may have taxonomies
+type Summary struct {
 	Taxonomies []Taxonomy `json:"taxonomies,omitempty"`
 }
 
@@ -103,7 +105,7 @@ type ReportBody struct {
 	Artifacts    []Artifact  `json:"artifacts,omitempty"`
 	FullReport   interface{} `json:"full,omitempty"`
 	Success      bool        `json:"success,omitempty"`
-	Summary      summary     `json:"summary,omitempty"`
+	Summary      Summary     `json:"summary,omitempty"`
 	ErrorMessage string      `json:"errorMessage,omitempty"`
 	Input        JobInput    `json:"input,omitempty"`
 }
