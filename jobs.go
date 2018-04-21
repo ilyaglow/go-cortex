@@ -24,7 +24,7 @@ type JobInput struct {
 	ArtifactAttributes
 	Data   string            `json:"data,omitempty"`
 	File   string            `json:"file,omitempty"`
-	Config cfg               `json:"config,omitempty"`
+	Config Cfg               `json:"config,omitempty"`
 	Proxy  map[string]string `json:"proxy,omitempty"`
 }
 

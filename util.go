@@ -20,29 +20,29 @@ var (
 	rxEmail          = regexp.MustCompile("(((([a-zA-Z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])+(\\.([a-zA-Z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])+)*)|((\\x22)((((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(([\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]|\\x21|[\\x23-\\x5b]|[\\x5d-\\x7e]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])|(\\([\\x01-\\x09\\x0b\\x0c\\x0d-\\x7f]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}]))))*(((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(\\x22)))@" + domain)
 	rxHash           = regexp.MustCompile(`([0-9a-fA-F]{64}|[0-9a-fA-F]{40}|[0-9a-fA-F]{32})`)
 	rxIPv4           = regexp.MustCompile(`((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.)?){1}`)
-	rxIPv6           = regexp.MustCompile(govalidator.IP)
+	rxIPv6           = regexp.MustCompile(`\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*`)
 	rxRegistryKey    = regexp.MustCompile(`(HKEY|HKLM|HKCU|HKCR|HKCC)[\\a-zA-Z0-9]+`)
 	rxURL            = regexp.MustCompile(govalidator.URLSchema + govalidator.URLUsername + `?` + `((` + govalidator.URLIP + `|(\[` + govalidator.IP + `\])|(([a-zA-Z0-9]([a-zA-Z0-9-_]+)?[a-zA-Z0-9]([-\.][a-zA-Z0-9]+)*)|(` + govalidator.URLSubdomain + `?))?(([a-zA-Z\x{00a1}-\x{ffff}0-9]+-?-?)*[a-zA-Z\x{00a1}-\x{ffff}0-9]+)(?:\.([a-zA-Z\x{00a1}-\x{ffff}]{1,}))?))\.?` + govalidator.URLPort + `?` + govalidator.URLPath + `?`)
-	rxUserAgent      = regexp.MustCompile(`(Mozilla/[45]\.0 |AppleWebKit/[0-9]{3}\.[0-9]{2} |Chrome/[0-9]{2}\.[0-9]\.[0-9]{4}\.[0-9]{3} |Safari/[0-9]{3}\.[0-9]{2} ).*`)
+	rxUserAgent      = regexp.MustCompile(`Mozilla/[0-9]\.[0-9] \(([A-Za-z0-9 \/._]+;){1,3} ([A-Za-z0-9 \/.:_]+){0,2}\)( ([A-Za-z0-9 \/.]+){1} \(KHTML, like Gecko\)){0,1} ([A-Za-z0-9 \/.]+){2,3}`)
 	rxBitcoinAddress = regexp.MustCompile(`[13][a-km-zA-HJ-NP-Z1-9]{25,34}`)
 )
 
 // Rxs represents map of regexes
 var Rxs = map[string]*regexp.Regexp{
-	"cc":           rxCC,
-	"ipv4":         rxIPv4,
-	"ipv6":         rxIPv6,
-	"domain":       rxDomain,
-	"email":        rxEmail,
-	"hash":         rxHash,
-	"registry":     rxRegistryKey,
-	"url":          rxURL,
-	"user-agent":   rxUserAgent,
-	"bitcoin-addr": rxBitcoinAddress,
+	"cc":              rxCC,
+	"ipv4":            rxIPv4,
+	"ipv6":            rxIPv6,
+	"domain":          rxDomain,
+	"email":           rxEmail,
+	"hash":            rxHash,
+	"registry":        rxRegistryKey,
+	"url":             rxURL,
+	"user-agent":      rxUserAgent,
+	"bitcoin-address": rxBitcoinAddress,
 }
 
-// cfg represents custom config field in the Analyzer definition
-type cfg map[string]interface{}
+// Cfg represents custom config field in the Analyzer definition
+type Cfg map[string]interface{}
 
 // Error returns unsuccessful Report with an error message
 func (j *JobInput) Error(msg string) {
@@ -125,48 +125,72 @@ func ExtractArtifacts(body string) []Artifact {
 }
 
 // GetString is a getter for string type
-func (c cfg) GetString(key string) (string, error) {
-	var res string
-	var err error
+func (c Cfg) GetString(key string) (string, error) {
+	var (
+		res string
+		err error
+		val interface{}
+		ok  bool
+	)
 
-	switch c[key].(type) {
+	if val, ok = c[key]; !ok {
+		return "", fmt.Errorf("Not such key: %s", key)
+	}
+
+	switch val.(type) {
 	case string:
-		res = c[key].(string)
+		res = val.(string)
 	default:
 		res = ""
-		err = fmt.Errorf("Wrong type chosen (%T)", c[key])
+		err = fmt.Errorf("Wrong type chosen for key %s: (%T)", key, val)
 	}
 
 	return res, err
 }
 
 // GetFloat is a getter for float64 type
-func (c cfg) GetFloat(key string) (float64, error) {
-	var res float64
-	var err error
+func (c Cfg) GetFloat(key string) (float64, error) {
+	var (
+		res float64
+		err error
+		val interface{}
+		ok  bool
+	)
 
-	switch c[key].(type) {
+	if val, ok = c[key]; !ok {
+		return 0, fmt.Errorf("Not such key: %s", key)
+	}
+
+	switch val.(type) {
 	case float64:
-		res = c[key].(float64)
+		res = val.(float64)
 	default:
 		res = 0
-		err = fmt.Errorf("Wrong type chosen (%T)", c[key])
+		err = fmt.Errorf("Wrong type chosen for key %s: (%T)", key, val)
 	}
 
 	return res, err
 }
 
 // GetBool is a getter for bool type
-func (c cfg) GetBool(key string) (bool, error) {
-	var res bool
-	var err error
+func (c Cfg) GetBool(key string) (bool, error) {
+	var (
+		res bool
+		err error
+		val interface{}
+		ok  bool
+	)
 
-	switch c[key].(type) {
+	if val, ok = c[key]; !ok {
+		return false, fmt.Errorf("Not such key: %s", key)
+	}
+
+	switch val.(type) {
 	case bool:
-		res = c[key].(bool)
+		res = val.(bool)
 	default:
 		res = false
-		err = fmt.Errorf("Wrong type chosen (%T)", c[key])
+		err = fmt.Errorf("Wrong type chosen for key %s: (%T)", key, val)
 	}
 	return res, err
 }
