@@ -61,10 +61,11 @@ type AnalyzerReport struct {
 }
 
 // SayError returns unsuccessful Report with an error message
-func SayError(msg string) {
+func SayError(input *JobInput, msg string) {
 	r := &AnalyzerReport{
 		Success:      false,
 		ErrorMessage: msg,
+		Input:        input,
 	}
 
 	body, err := json.Marshal(r)
@@ -220,7 +221,7 @@ func NewInput() (*JobInput, error) {
 	}
 
 	if v && !in.allowedTLP() {
-		SayError("TLP is higher than allowed")
+		SayError(in, "TLP is higher than allowed")
 		return nil, nil
 	}
 
