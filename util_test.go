@@ -86,11 +86,11 @@ func TestExtractArtifacts(t *testing.T) {
 	}
 }
 
-func artifactsToMap(as []Artifact) map[string][]string {
+func artifactsToMap(as []ExtractedArtifact) map[string][]string {
 	m := make(map[string][]string)
 
 	for i := range as {
-		m[as[i].Attributes.DataType] = append(m[as[i].Attributes.DataType], as[i].Data)
+		m[as[i].Type] = append(m[as[i].Type], as[i].Value)
 	}
 
 	return m
