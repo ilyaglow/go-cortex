@@ -13,7 +13,7 @@ const jobsURL = "/api/job"
 
 // ArtifactAttributes struct represents Artifact Attributes
 type ArtifactAttributes struct {
-	DataType    string `json:"dataType"`
+	DataType    string `json:"dataType,omitempty"`
 	TLP         int    `json:"tlp,omitempty"`
 	ContentType string `json:"content-type,omitempty"`
 	Filename    string `json:"filename,omitempty"`
@@ -105,9 +105,9 @@ type ReportBody struct {
 	Artifacts    []Artifact  `json:"artifacts,omitempty"`
 	FullReport   interface{} `json:"full,omitempty"`
 	Success      bool        `json:"success,omitempty"`
-	Summary      Summary     `json:"summary,omitempty"`
+	Summary      *Summary    `json:"summary,omitempty"`
 	ErrorMessage string      `json:"errorMessage,omitempty"`
-	Input        JobInput    `json:"input,omitempty"`
+	Input        *JobInput   `json:"input,omitempty"`
 }
 
 // JobsFilter is used to filter ListJobs results

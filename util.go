@@ -44,12 +44,27 @@ var Rxs = map[string]*regexp.Regexp{
 // Cfg represents custom config field in the Analyzer definition
 type Cfg map[string]interface{}
 
-// Error returns unsuccessful Report with an error message
-func (j *JobInput) Error(msg string) {
-	r := &ReportBody{
+// ExtractedArtifact is used for artifacts with slightly different structure
+type ExtractedArtifact struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
+
+//AnalyzerReport is the report that analyzer app should return
+type AnalyzerReport struct {
+	Artifacts    []ExtractedArtifact `json:"artifacts,omitempty"`
+	FullReport   interface{}         `json:"full,omitempty"`
+	Success      bool                `json:"success"`
+	Summary      *Summary            `json:"summary,omitempty"`
+	ErrorMessage string              `json:"errorMessage,omitempty"`
+	Input        *JobInput           `json:"input,omitempty"`
+}
+
+// SayError returns unsuccessful Report with an error message
+func SayError(msg string) {
+	r := &AnalyzerReport{
 		Success:      false,
 		ErrorMessage: msg,
-		Input:        *j,
 	}
 
 	body, err := json.Marshal(r)
@@ -61,19 +76,18 @@ func (j *JobInput) Error(msg string) {
 	os.Exit(1)
 }
 
-// Report constructs Cortex Report by raw body and taxonomies
-func (j *JobInput) Report(body interface{}, taxs []Taxonomy) {
+// SayReport constructs Report by raw body and taxonomies
+func SayReport(body interface{}, taxs []Taxonomy) {
 	mb, err := json.Marshal(body)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	r := &ReportBody{
+	r := &AnalyzerReport{
 		Success:    true,
-		Input:      *j,
 		Artifacts:  ExtractArtifacts(string(mb)),
 		FullReport: body,
-		Summary:    Summary{taxs},
+		Summary:    &Summary{taxs},
 	}
 	b, err := json.Marshal(r)
 	if err != nil {
@@ -98,8 +112,8 @@ func (j *JobInput) allowedTLP() bool {
 }
 
 // ExtractArtifacts extracts all artifacts from report string
-func ExtractArtifacts(body string) []Artifact {
-	var ars []Artifact
+func ExtractArtifacts(body string) []ExtractedArtifact {
+	var ars []ExtractedArtifact
 	ma := make(map[string]bool)
 	for t, r := range Rxs {
 		res := r.FindAllString(body, -1)
@@ -113,11 +127,9 @@ func ExtractArtifacts(body string) []Artifact {
 			}
 
 			ma[res[i]] = true
-			ars = append(ars, Artifact{
-				Data: res[i],
-				Attributes: ArtifactAttributes{
-					DataType: t,
-				},
+			ars = append(ars, ExtractedArtifact{
+				Value: res[i],
+				Type:  t,
 			})
 		}
 	}
@@ -208,7 +220,7 @@ func NewInput() (*JobInput, error) {
 	}
 
 	if v && !in.allowedTLP() {
-		in.Error("TLP is higher than allowed")
+		SayError("TLP is higher than allowed")
 		return nil, nil
 	}
 
