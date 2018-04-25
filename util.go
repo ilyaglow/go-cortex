@@ -50,19 +50,24 @@ type ExtractedArtifact struct {
 	Value string `json:"value"`
 }
 
-//AnalyzerReport is the report that analyzer app should return
+//AnalyzerReport is the report that analyzer app should return in case everything is okay
 type AnalyzerReport struct {
-	Artifacts    []ExtractedArtifact `json:"artifacts,omitempty"`
-	FullReport   interface{}         `json:"full,omitempty"`
-	Success      bool                `json:"success"`
-	Summary      *Summary            `json:"summary,omitempty"`
-	ErrorMessage string              `json:"errorMessage,omitempty"`
-	Input        *JobInput           `json:"input,omitempty"`
+	Artifacts  []ExtractedArtifact `json:"artifacts"`
+	FullReport interface{}         `json:"full"`
+	Success    bool                `json:"success"`
+	Summary    *Summary            `json:"summary"`
+}
+
+// AnalyzerError is the report that analyzer app should return in case something went wrong
+type AnalyzerError struct {
+	Success      bool      `json:"success"`
+	ErrorMessage string    `json:"errorMessage"`
+	Input        *JobInput `json:"input"`
 }
 
 // SayError returns unsuccessful Report with an error message
 func SayError(input *JobInput, msg string) {
-	r := &AnalyzerReport{
+	r := &AnalyzerError{
 		Success:      false,
 		ErrorMessage: msg,
 		Input:        input,
@@ -114,7 +119,7 @@ func (j *JobInput) allowedTLP() bool {
 
 // ExtractArtifacts extracts all artifacts from report string
 func ExtractArtifacts(body string) []ExtractedArtifact {
-	var ars []ExtractedArtifact
+	ars := []ExtractedArtifact{}
 	ma := make(map[string]bool)
 	for t, r := range Rxs {
 		res := r.FindAllString(body, -1)
