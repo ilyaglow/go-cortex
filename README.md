@@ -97,3 +97,78 @@ func main() {
 	}
 }
 ```
+
+# Write your own analyzer
+
+```golang
+package main
+
+import (
+	"log"
+	"strconv"
+
+	"github.com/ilyaglow/go-cortex"
+)
+
+// Report is a sample analyzer report
+type Report struct {
+	Field   string   `json:"field,omitempty"`
+	Results []string `json:"results,omitempty"`
+	Status  bool     `json:"status,omitempty"`
+}
+
+func main() {
+	// Grab stdin to JobInput structure
+	input, err := cortex.NewInput()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Get url parameter from analyzer config
+	url, err := input.Config.GetString("url")
+	if err != nil {
+		// Report an error if something went wrong
+		cortex.SayError(input, err.Error())
+	}
+
+	// You get somehow report struct from JobInput.Data
+	rep, err := Do(input.Data, url)
+	if err != nil {
+		cortex.SayError(input, err.Error())
+	}
+
+	// Make taxonomies
+	var txs []cortex.Taxonomy
+	namespace := "AnalyzerName"
+	predicate := "Predicate"
+	if len(rep.Results) == 0 {
+		txs = append(txs, cortex.Taxonomy{
+			Namespace: namespace,
+			Predicate: predicate,
+			Level:     "safe",
+			Value:     "0",
+		})
+	} else {
+		txs = append(txs, cortex.Taxonomy{
+			Namespace: namespace,
+			Predicate: predicate,
+			Level:     "suspicious",
+			Value:     strconv.FormatInt(int64(len(rep.Results[0])), 10),
+		})
+	}
+
+	// Report accept marshallable struct and taxonomies
+	cortex.SayReport(rep, txs)
+}
+
+// Do represents analyzing data
+func Do(input string, u string) (*Report, error) {
+	return &Report{
+		Field:   "some",
+		Results: []string{"domain.com", "127.0.0.1", "email@domain.com"},
+		Status:  true,
+	}, nil
+}
+```
+
+You can see a real world examples at [https://github.com/ilyaglow/go-cortex-analyzers](https://github.com/ilyaglow/go-cortex-analyzers).

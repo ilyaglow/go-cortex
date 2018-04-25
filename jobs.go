@@ -13,17 +13,19 @@ const jobsURL = "/api/job"
 
 // ArtifactAttributes struct represents Artifact Attributes
 type ArtifactAttributes struct {
-	DataType    string `json:"dataType"`
+	DataType    string `json:"dataType,omitempty"`
 	TLP         int    `json:"tlp,omitempty"`
 	ContentType string `json:"content-type,omitempty"`
 	Filename    string `json:"filename,omitempty"`
 }
 
-// JobInput is used to track failed jobs
+// JobInput is used to track failed jobs and work with analyzer's input
 type JobInput struct {
 	ArtifactAttributes
-	File   string                 `json:"file,omitempty"`
-	Config map[string]interface{} `json:"config,omitempty"`
+	Data   string            `json:"data,omitempty"`
+	File   string            `json:"file,omitempty"`
+	Config Cfg               `json:"config,omitempty"`
+	Proxy  map[string]string `json:"proxy,omitempty"`
 }
 
 // JobBody is deprecated and is left for the compatilibity
@@ -92,8 +94,8 @@ type JobReport struct {
 	Report ReportBody `json:"report"`
 }
 
-// summary is a customized report object which may have taxonomies
-type summary struct {
+// Summary is a customized report object which may have taxonomies
+type Summary struct {
 	Taxonomies []Taxonomy `json:"taxonomies,omitempty"`
 }
 
@@ -103,9 +105,9 @@ type ReportBody struct {
 	Artifacts    []Artifact  `json:"artifacts,omitempty"`
 	FullReport   interface{} `json:"full,omitempty"`
 	Success      bool        `json:"success,omitempty"`
-	Summary      summary     `json:"summary,omitempty"`
+	Summary      *Summary    `json:"summary,omitempty"`
 	ErrorMessage string      `json:"errorMessage,omitempty"`
-	Input        JobInput    `json:"input,omitempty"`
+	Input        *JobInput   `json:"input,omitempty"`
 }
 
 // JobsFilter is used to filter ListJobs results
