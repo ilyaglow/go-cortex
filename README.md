@@ -98,7 +98,7 @@ func main() {
 }
 ```
 
-# Write your own analyzer
+## Write your own analyzer
 
 ```golang
 package main
