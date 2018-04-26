@@ -222,7 +222,7 @@ func NewInput() (*JobInput, error) {
 
 	v, err := in.Config.GetBool("check_tlp")
 	if err != nil {
-		return nil, err
+		return in, nil // if check_tlp is not found do not check for it
 	}
 
 	if v && !in.allowedTLP() {
