@@ -1,8 +1,8 @@
 /*
-Package cortex is the client library for Cortex v1 API.
+Package cortex is the client library for Cortex v2 API.
 Link: https://github.com/TheHive-Project/Cortex.
 
-Check out Cortex v1 documentation:
-https://github.com/TheHive-Project/CortexDocs/tree/cortex-1
+Check out Cortex v2 documentation:
+https://github.com/TheHive-Project/CortexDocs
 */
 package cortex
