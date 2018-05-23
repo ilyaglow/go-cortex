@@ -11,6 +11,20 @@ import (
 	"github.com/asaskevich/govalidator"
 )
 
+const (
+	// TxSafe is a safe taxonomy level
+	TxSafe = "safe"
+
+	// TxInfo is an info taxonomy level
+	TxInfo = "info"
+
+	// TxSuspicious is a suspicious taxonomy level
+	TxSuspicious = "suspicious"
+
+	// TxMalicious is a malicious taxonomy level
+	TxMalicious = "malicious"
+)
+
 var (
 	domain = `([a-zA-Z0-9_]{1}[a-zA-Z0-9_-]{0,62}){1}(\.[a-zA-Z]{1}[a-zA-Z]{0,62})+[\._]?`
 	// inspired by govalidator.CreditCard
