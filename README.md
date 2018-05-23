@@ -145,14 +145,14 @@ func main() {
 		txs = append(txs, cortex.Taxonomy{
 			Namespace: namespace,
 			Predicate: predicate,
-			Level:     "safe",
+			Level:     cortex.TxSafe,
 			Value:     "0",
 		})
 	} else {
 		txs = append(txs, cortex.Taxonomy{
 			Namespace: namespace,
 			Predicate: predicate,
-			Level:     "suspicious",
+			Level:     cortex.TxSuspicious,
 			Value:     strconv.FormatInt(int64(len(rep.Results[0])), 10),
 		})
 	}
