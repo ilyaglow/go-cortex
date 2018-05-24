@@ -11,3 +11,37 @@
 ```
 go get -u github.com/ilyaglow/go-cortex
 ```
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"gopkg.ilya.app/ilyaglow/go-cortex.v2"
+)
+
+func main() {
+	crtx, err := cortex.NewClient("http://127.0.0.1:9001/", &cortex.ClientOpts{
+		Auth: &cortex.APIAuth{
+			APIKey: "YOUR-API-KEY",
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rep, err := crtx.Analyzers.Run(context.Background(), "MaxMind_GeoIP_3_0", &cortex.Task{
+		Data:     "1.1.1.1",
+		DataType: "ip",
+	}, time.Minute*5)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("%v\n", rep)
+}
+```
