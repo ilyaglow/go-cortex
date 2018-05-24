@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 const (
@@ -13,11 +14,11 @@ const (
 
 // Task represents a Cortex task to run
 type Task struct {
-	Data       string            `json:"data"`
-	DataType   string            `json:"dataType"`
-	TLP        int               `json:"tlp"`
-	Message    string            `json:"message"`
-	Parameters map[string]string `json:"parameters"`
+	Data       string      `json:"data,omitempty"`
+	DataType   string      `json:"dataType,omitempty"`
+	TLP        int         `json:"tlp,omitempty"`
+	Message    string      `json:"message,omitempty"`
+	Parameters interface{} `json:"parameters,omitempty"`
 }
 
 // Type returns DataType of the task, satisfying an Observable interface
@@ -119,6 +120,7 @@ type Observable interface {
 type JobService interface {
 	Get(context.Context, string) (*Job, *http.Response, error)
 	GetReport(context.Context, string) (*Report, *http.Response, error)
+	WaitForAJob(context.Context, string, time.Duration) (*Job, *http.Response, error)
 }
 
 // JobServiceOp handles cases methods from TheHive API
@@ -156,4 +158,22 @@ func (j *JobServiceOp) GetReport(ctx context.Context, jobid string) (*Report, *h
 	}
 
 	return &r, resp, nil
+}
+
+// WaitForAJob synchronously waits a certain job id for a specified duration of time
+// and returns a report
+func (j *JobServiceOp) WaitForAJob(ctx context.Context, jid string, d time.Duration) (*Job, *http.Response, error) {
+	sd := d.String()
+	req, err := j.client.NewRequest("GET", fmt.Sprintf(jobsURL+"/%s/waitreport?atMost=%s", jid, sd), nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var job Job
+	resp, err := j.client.Do(ctx, req, &job)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &job, resp, err
 }

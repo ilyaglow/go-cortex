@@ -2,7 +2,6 @@ package cortex
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -40,6 +39,7 @@ type AnalyzerService interface {
 	Get(context.Context, string) (*Analyzer, *http.Response, error)
 	List(context.Context) ([]Analyzer, *http.Response, error)
 	Run(context.Context, string, Observable, time.Duration) (*Report, error)
+	StartJob(context.Context, string, Observable) (*Job, *http.Response, error)
 }
 
 // AnalyzerServiceOp handles analyzer methods from Cortex API
@@ -49,13 +49,29 @@ type AnalyzerServiceOp struct {
 
 // Get a specified Cortex analyzer
 func (a *AnalyzerServiceOp) Get(ctx context.Context, id string) (*Analyzer, *http.Response, error) {
-	req, err := a.client.NewRequest("GET", fmt.Sprintf(analyzersURL+"/%s", id), nil)
+	als, resp, err := a.List(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	var alid string
+	for i := range als {
+		if als[i].Name == id {
+			alid = als[i].ID
+			break
+		}
+	}
+
+	if alid == "" {
+		return nil, resp, fmt.Errorf("no analyzer found with name %s", id)
+	}
+
+	req, err := a.client.NewRequest("GET", fmt.Sprintf(analyzersURL+"/%s", alid), nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	var an Analyzer
-	resp, err := a.client.Do(ctx, req, &an)
+	resp, err = a.client.Do(ctx, req, &an)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -83,17 +99,26 @@ func (a *AnalyzerServiceOp) List(ctx context.Context) ([]Analyzer, *http.Respons
 // Run will start the observable analysis using specified analyzer,
 // wait for a certain duration and return a report
 func (a *AnalyzerServiceOp) Run(ctx context.Context, anid string, o Observable, d time.Duration) (*Report, error) {
-	j, _, err := a.StartJob(ctx, anid, o)
+	an, _, err := a.Get(ctx, anid)
 	if err != nil {
 		return nil, err
 	}
 
-	_, _, err = a.WaitForAJob(ctx, j.ID, d)
+	j, _, err := a.StartJob(ctx, an.ID, o)
 	if err != nil {
 		return nil, err
 	}
 
-	jso := &JobServiceOp{client: a.client}
+	jso := &JobServiceOp{a.client}
+	_, resp, err := jso.WaitForAJob(ctx, j.ID, d)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("error waiting for a job report %s", resp.Status)
+	}
+
 	r, _, err := jso.GetReport(ctx, j.ID)
 	if err != nil {
 		return nil, err
@@ -105,17 +130,14 @@ func (a *AnalyzerServiceOp) Run(ctx context.Context, anid string, o Observable, 
 // StartJob starts observable analysis
 func (a *AnalyzerServiceOp) StartJob(ctx context.Context, anid string, o Observable) (*Job, *http.Response, error) {
 	var req *http.Request
+	var err error
 
 	switch o.Type() {
 	case "file":
 		return nil, nil, errors.New("not implemented yet")
 	default:
-		obsData, err := json.Marshal(o.(*Task))
-		if err != nil {
-			return nil, nil, err
-		}
-
-		req, err = a.client.NewRequest("POST", fmt.Sprintf(analyzersURL+"/anid/%s/run", anid), &obsData)
+		obsData := o.(*Task)
+		req, err = a.client.NewRequest("POST", fmt.Sprintf(analyzersURL+"/%s/run", anid), &obsData)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -129,22 +151,4 @@ func (a *AnalyzerServiceOp) StartJob(ctx context.Context, anid string, o Observa
 	}
 
 	return &j, resp, nil
-}
-
-// WaitForAJob synchronously waits a certain job id for a specified duration of time
-// and returns a report
-func (a *AnalyzerServiceOp) WaitForAJob(ctx context.Context, jid string, d time.Duration) (*Job, *http.Response, error) {
-	sd := d.String()
-	req, err := a.client.NewRequest("GET", fmt.Sprintf(jobsURL+"/%s/waitreport?atMost=%s", jid, sd), nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var j Job
-	resp, err := a.client.Do(ctx, req, &j)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return &j, resp, err
 }
