@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -163,7 +164,7 @@ func (j *JobServiceOp) GetReport(ctx context.Context, jobid string) (*Report, *h
 // WaitForAJob synchronously waits a certain job id for a specified duration of time
 // and returns a report
 func (j *JobServiceOp) WaitForAJob(ctx context.Context, jid string, d time.Duration) (*Job, *http.Response, error) {
-	sd := d.String()
+	sd := strconv.FormatFloat(d.Seconds(), 'f', 2, 64) + "seconds"
 	req, err := j.client.NewRequest("GET", fmt.Sprintf(jobsURL+"/%s/waitreport?atMost=%s", jid, sd), nil)
 	if err != nil {
 		return nil, nil, err
