@@ -25,6 +25,26 @@ func TestListAnalyzers(t *testing.T) {
 	}
 }
 
+func TestListByTypeAnalyzers(t *testing.T) {
+	client, mux, _, closer := setup()
+	defer closer()
+
+	mux.HandleFunc("/"+analyzersByType+analyzerType, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write(analyzersJSON)
+	})
+
+	got, _, err := client.Analyzers.ListByType(context.Background(), analyzerType)
+	if err != nil {
+		t.Errorf("Analyzer.ListByType returned error: %v", err)
+	}
+	if want := wantList; !reflect.DeepEqual(got, want) {
+		t.Errorf("Analyzer.ListByType = %+v, want %+v", got, want)
+	}
+}
+
+var analyzerType = "ip"
+
 var analyzersJSON = []byte(`
 [
   {
