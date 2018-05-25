@@ -3,7 +3,10 @@ package cortex
 import (
 	"context"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -40,6 +43,7 @@ type AnalyzerService interface {
 	List(context.Context) ([]Analyzer, *http.Response, error)
 	ListByType(context.Context, string) ([]Analyzer, *http.Response, error)
 	Run(context.Context, string, Observable, time.Duration) (*Report, error)
+	RunAll(context.Context, Observable, time.Duration) (<-chan *Report, error)
 	StartJob(context.Context, string, Observable) (*Job, *http.Response, error)
 }
 
@@ -142,6 +146,99 @@ func (a *AnalyzerServiceOp) Run(ctx context.Context, anid string, o Observable, 
 	}
 
 	return r, err
+}
+
+// RunAll will start the observable analysis using specified analyzer,
+// wait for a certain duration and return a report
+func (a *AnalyzerServiceOp) RunAll(ctx context.Context, o Observable, d time.Duration) (<-chan *Report, error) {
+	ans, _, err := a.ListByType(ctx, o.Type())
+	if err != nil {
+		return nil, err
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(len(ans))
+
+	var reports chan *Report
+
+	switch o.(type) {
+	case *FileTask:
+		reports = a.AnalyzeFile(ctx, o.(*FileTask), &wg, d, ans...)
+	case *Task:
+		reports = a.AnalyzeString(ctx, o.(*Task), &wg, d, ans...)
+	}
+
+	go func() {
+		wg.Wait()
+		close(reports)
+	}()
+
+	return reports, nil
+}
+
+// AnalyzeFile analyses a file observable by multiple analyzers
+func (a *AnalyzerServiceOp) AnalyzeFile(ctx context.Context, ft *FileTask, wg *sync.WaitGroup, td time.Duration, ans ...Analyzer) chan *Report {
+	var (
+		readPipes  []*io.PipeReader
+		writePipes []*io.PipeWriter
+	)
+	rch := make(chan *Report, 100)
+
+	for i := range ans {
+		fr, fw := io.Pipe()
+		readPipes = append(readPipes, fr)
+		writePipes = append(writePipes, fw)
+
+		o := &FileTask{
+			FileName:     ft.FileName,
+			Reader:       fr,
+			FileTaskMeta: ft.FileTaskMeta,
+		}
+
+		go func(an Analyzer, f io.Reader) {
+			defer wg.Done()
+
+			report, err := a.Run(ctx, an.ID, o, td)
+			if err == nil && report != nil {
+				rch <- report
+			}
+
+		}(ans[i], fr)
+	}
+
+	wr := make([]io.Writer, len(writePipes))
+	for i := range writePipes {
+		wr[i] = writePipes[i]
+	}
+
+	mw := io.MultiWriter(wr...)
+	go func() {
+		if _, err := io.Copy(mw, ft.Reader); err != nil {
+			log.Println(err)
+		}
+		for i := range writePipes {
+			writePipes[i].Close()
+		}
+	}()
+
+	return rch
+}
+
+// AnalyzeString analyses a basic string-alike observable by multiple analyzers
+func (a *AnalyzerServiceOp) AnalyzeString(ctx context.Context, t *Task, wg *sync.WaitGroup, td time.Duration, ans ...Analyzer) chan *Report {
+	rch := make(chan *Report, 100)
+	for i := range ans {
+		go func(an Analyzer) {
+			defer wg.Done()
+
+			report, err := a.Run(ctx, an.ID, t, td)
+			if err == nil && report != nil {
+				rch <- report
+			}
+		}(ans[i])
+	}
+
+	return rch
 }
 
 // StartJob starts observable analysis
