@@ -38,6 +38,7 @@ type Analyzer struct {
 type AnalyzerService interface {
 	Get(context.Context, string) (*Analyzer, *http.Response, error)
 	List(context.Context) ([]Analyzer, *http.Response, error)
+	ListByType(context.Context, string) ([]Analyzer, *http.Response, error)
 	Run(context.Context, string, Observable, time.Duration) (*Report, error)
 	StartJob(context.Context, string, Observable) (*Job, *http.Response, error)
 }
@@ -88,6 +89,22 @@ func (a *AnalyzerServiceOp) List(ctx context.Context) ([]Analyzer, *http.Respons
 		return nil, nil, err
 	}
 
+	resp, err := a.client.Do(ctx, req, &analyzers)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return analyzers, resp, nil
+}
+
+// ListByType lists Cortex analyzers by datatype
+func (a *AnalyzerServiceOp) ListByType(ctx context.Context, t string) ([]Analyzer, *http.Response, error) {
+	req, err := a.client.NewRequest("GET", analyzersByType+t, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var analyzers []Analyzer
 	resp, err := a.client.Do(ctx, req, &analyzers)
 	if err != nil {
 		return nil, resp, err
