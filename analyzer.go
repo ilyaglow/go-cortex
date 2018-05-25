@@ -2,7 +2,6 @@ package cortex
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -151,7 +150,12 @@ func (a *AnalyzerServiceOp) StartJob(ctx context.Context, anid string, o Observa
 
 	switch o.Type() {
 	case "file":
-		return nil, nil, errors.New("not implemented yet")
+		obsData := o.(*FileTask)
+		req, err = a.client.NewFileRequest("POST", fmt.Sprintf(analyzersURL+"/%s/run", anid), &obsData, obsData.FileName, obsData.Reader)
+		if err != nil {
+			return nil, nil, err
+		}
+
 	default:
 		obsData := o.(*Task)
 		req, err = a.client.NewRequest("POST", fmt.Sprintf(analyzersURL+"/%s/run", anid), &obsData)

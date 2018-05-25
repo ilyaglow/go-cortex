@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
@@ -91,6 +92,62 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	if body != nil {
 		req.Header.Set("Content-Type", mediaType)
 	}
+	req.Header.Set("Accept", mediaType)
+	if c.UserAgent != "" {
+		req.Header.Set("User-Agent", c.UserAgent)
+	}
+
+	req.Header.Set("Authorization", c.Opts.Auth.Token())
+
+	return req, nil
+}
+
+// NewFileRequest creates and API request with file form
+func (c *Client) NewFileRequest(method, urlStr string, body interface{}, fileName string, r io.Reader) (*http.Request, error) {
+	if !strings.HasSuffix(c.BaseURL.Path, "/") {
+		return nil, fmt.Errorf("BaseURL must have a trailing slash, but %q does not", c.BaseURL)
+	}
+	u, err := c.BaseURL.Parse(urlStr)
+	if err != nil {
+		return nil, err
+	}
+
+	var w bytes.Buffer
+	mpw := multipart.NewWriter(&w)
+	fpart, err := mpw.CreateFormFile("attachment", fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = io.Copy(fpart, r)
+	if err != nil {
+		return nil, err
+	}
+
+	jpart, err := mpw.CreateFormField("_json")
+	if err != nil {
+		return nil, err
+	}
+
+	bb, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	_, err = jpart.Write(bb)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := mpw.Close(); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(method, u.String(), &w)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", mpw.FormDataContentType())
 	req.Header.Set("Accept", mediaType)
 	if c.UserAgent != "" {
 		req.Header.Set("User-Agent", c.UserAgent)
