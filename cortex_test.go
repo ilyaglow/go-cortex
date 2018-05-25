@@ -15,7 +15,5 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 		},
 	})
 
-	client.PageSize = 100
-
 	return client, mux, server.URL, server.Close
 }
