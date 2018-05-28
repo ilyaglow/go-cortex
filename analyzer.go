@@ -43,7 +43,7 @@ type AnalyzerService interface {
 	List(context.Context) ([]Analyzer, *http.Response, error)
 	ListByType(context.Context, string) ([]Analyzer, *http.Response, error)
 	Run(context.Context, string, Observable, time.Duration) (*Report, error)
-	RunAll(context.Context, Observable, time.Duration) (<-chan *Report, error)
+	RunAll(context.Context, Observable, time.Duration, func(r *Report)) error
 	StartJob(context.Context, string, Observable) (*Job, *http.Response, error)
 }
 
@@ -125,7 +125,12 @@ func (a *AnalyzerServiceOp) Run(ctx context.Context, anid string, o Observable, 
 		return nil, err
 	}
 
-	j, _, err := a.StartJob(ctx, an.ID, o)
+	return a.run(ctx, an.ID, o, d)
+}
+
+// run is a more lighter version that uses Cortex Analyzer ID directly
+func (a *AnalyzerServiceOp) run(ctx context.Context, id string, o Observable, d time.Duration) (*Report, error) {
+	j, _, err := a.StartJob(ctx, id, o)
 	if err != nil {
 		return nil, err
 	}
@@ -150,39 +155,39 @@ func (a *AnalyzerServiceOp) Run(ctx context.Context, anid string, o Observable, 
 
 // RunAll will start the observable analysis using specified analyzer,
 // wait for a certain duration and return a report
-func (a *AnalyzerServiceOp) RunAll(ctx context.Context, o Observable, d time.Duration) (<-chan *Report, error) {
+func (a *AnalyzerServiceOp) RunAll(ctx context.Context, o Observable, d time.Duration, cb func(r *Report)) error {
 	ans, _, err := a.ListByType(ctx, o.Type())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var wg sync.WaitGroup
 	wg.Add(len(ans))
-
-	var reports chan *Report
+	log.Println(len(ans))
+	defer wg.Wait()
 
 	switch o.(type) {
 	case *FileTask:
-		reports = a.AnalyzeFile(ctx, o.(*FileTask), &wg, d, ans...)
+		err := a.AnalyzeFile(ctx, &wg, o.(*FileTask), d, cb, ans...)
+		if err != nil {
+			return err
+		}
 	case *Task:
-		reports = a.AnalyzeString(ctx, o.(*Task), &wg, d, ans...)
+		err := a.AnalyzeString(ctx, &wg, o.(*Task), d, cb, ans...)
+		if err != nil {
+			return err
+		}
 	}
 
-	go func() {
-		wg.Wait()
-		close(reports)
-	}()
-
-	return reports, nil
+	return nil
 }
 
 // AnalyzeFile analyses a file observable by multiple analyzers
-func (a *AnalyzerServiceOp) AnalyzeFile(ctx context.Context, ft *FileTask, wg *sync.WaitGroup, td time.Duration, ans ...Analyzer) chan *Report {
+func (a *AnalyzerServiceOp) AnalyzeFile(ctx context.Context, wg *sync.WaitGroup, ft *FileTask, td time.Duration, cb func(r *Report), ans ...Analyzer) error {
 	var (
 		readPipes  []*io.PipeReader
 		writePipes []*io.PipeWriter
 	)
-	rch := make(chan *Report, 100)
 
 	for i := range ans {
 		fr, fw := io.Pipe()
@@ -195,14 +200,19 @@ func (a *AnalyzerServiceOp) AnalyzeFile(ctx context.Context, ft *FileTask, wg *s
 			FileTaskMeta: ft.FileTaskMeta,
 		}
 
-		go func(an Analyzer, f io.Reader) {
+		go func(an Analyzer, f io.Reader) error {
 			defer wg.Done()
 
-			report, err := a.Run(ctx, an.ID, o, td)
+			report, err := a.run(ctx, an.ID, o, td)
+			if err != nil {
+				log.Println(err)
+				return err
+			}
 			if err == nil && report != nil {
-				rch <- report
+				cb(report)
 			}
 
+			return nil
 		}(ans[i], fr)
 	}
 
@@ -212,33 +222,39 @@ func (a *AnalyzerServiceOp) AnalyzeFile(ctx context.Context, ft *FileTask, wg *s
 	}
 
 	mw := io.MultiWriter(wr...)
-	go func() {
+	go func() error {
 		if _, err := io.Copy(mw, ft.Reader); err != nil {
-			log.Println(err)
+			return err
 		}
 		for i := range writePipes {
 			writePipes[i].Close()
 		}
+		return nil
 	}()
 
-	return rch
+	return nil
 }
 
 // AnalyzeString analyses a basic string-alike observable by multiple analyzers
-func (a *AnalyzerServiceOp) AnalyzeString(ctx context.Context, t *Task, wg *sync.WaitGroup, td time.Duration, ans ...Analyzer) chan *Report {
-	rch := make(chan *Report, 100)
+func (a *AnalyzerServiceOp) AnalyzeString(ctx context.Context, wg *sync.WaitGroup, t *Task, td time.Duration, cb func(r *Report), ans ...Analyzer) error {
 	for i := range ans {
-		go func(an Analyzer) {
+		go func(an Analyzer) error {
 			defer wg.Done()
 
-			report, err := a.Run(ctx, an.ID, t, td)
-			if err == nil && report != nil {
-				rch <- report
+			report, err := a.run(ctx, an.ID, t, td)
+			if err != nil {
+				log.Println(err)
+				return err
 			}
+			if err == nil && report != nil {
+				cb(report)
+			}
+
+			return nil
 		}(ans[i])
 	}
 
-	return rch
+	return nil
 }
 
 // StartJob starts observable analysis
