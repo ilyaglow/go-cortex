@@ -93,8 +93,8 @@ func main() {
 	mul.OnReport = func(r *cortex.Report) {
 		log.Println(r)
 	}
-	mul.OnError = func(r *cortex.Report) {
-		log.Println(r)
+	mul.OnError = func(e error) {
+		log.Println(e.Error())
 	}
 
 	// Actually run the analysis
