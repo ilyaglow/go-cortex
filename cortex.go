@@ -14,13 +14,25 @@ import (
 )
 
 const (
-	libraryVersion = "2.1.3"
+	libraryVersion = "2.1.7"
 
 	// APIRoute represents a prefix path
 	APIRoute = "api"
 
 	userAgent = "go-cortex/" + libraryVersion
 	mediaType = "application/json"
+
+	// TLPWhite represents non-limited disclosure.
+	TLPWhite = 0
+
+	// TLPGreen limits disclosure, restricted to the community.
+	TLPGreen = 1
+
+	// TLPAmber represents limited disclosure, restricted to participants’ organizations.
+	TLPAmber = 2
+
+	// TLPRed is not for disclosure, restricted to participants only.
+	TLPRed = 3
 )
 
 // Client is used to communicate with TheHive API
