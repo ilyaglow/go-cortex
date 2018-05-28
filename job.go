@@ -113,7 +113,7 @@ type ReportBody struct {
 	Success      bool        `json:"success,omitempty"`
 	Summary      *Summary    `json:"summary,omitempty"`
 	ErrorMessage string      `json:"errorMessage,omitempty"`
-	Input        *Task       `json:"input,omitempty"`
+	Input        string      `json:"input,omitempty"`
 }
 
 // Observable is an interface for string type artifact and file type artifact
