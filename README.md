@@ -6,11 +6,20 @@
 [WIP] Cortex v2 client library
 ------------------------------
 
+This version is not compatible with Cortex v1 version.
+
+I tried to avoid limitations, pitfalls and antipatterns from the previous version, so I even changed a whole approach in a couple places. Hope you'll enjoy it.
+
+Eventually, v2 branch will became the master branch.
+
 ## Usage example
 
+Get latest library
 ```
-go get -u github.com/ilyaglow/go-cortex
+go get -u gopkg.ilya.app/ilyaglow/go-cortex.v2
 ```
+
+### Simply run analyzer for an observable
 
 ```go
 package main
@@ -43,5 +52,55 @@ func main() {
 	}
 
 	fmt.Printf("%v\n", rep)
+}
+```
+
+### Aggregated analysis of an observable
+
+Could be used to analyze an observable by all analyzers that can work with it's data type at once. Previous implementation used a channel approach that seemed to me very limiting.
+
+Now you can use callback functions when analyzer returns a report or an error.
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"os"
+	"time"
+
+	"gopkg.ilya.app/ilyaglow/go-cortex.v2"
+)
+
+func main() {
+	crtx, err := cortex.NewClient("http://127.0.0.1:9001/", &cortex.ClientOpts{
+		Auth: &cortex.APIAuth{
+			APIKey: "YOUR-API-KEY",
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	task := &cortex.Task{
+		Data: "1.1.1.1",
+        DataType: "ip",
+	}
+
+	// Create new MultiRun struct
+	mul := crtx.Analyzers.NewMultiRun(context.Background(), 5*time.Minute)
+	mul.OnReport = func(r *cortex.Report) {
+		log.Println(r)
+	}
+	mul.OnError = func(r *cortex.Report) {
+		log.Println(r)
+	}
+
+	// Actually run the analysis
+	err = mul.Do(task)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 ```
