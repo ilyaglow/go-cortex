@@ -86,6 +86,11 @@ type Report struct {
 	ReportBody ReportBody `json:"report,omitempty"`
 }
 
+// Taxonomies is a shortcut to get taxonomies from the report
+func (r *Report) Taxonomies() []Taxonomy {
+	return r.ReportBody.Summary.Taxonomies
+}
+
 // Artifact represents an artifact
 type Artifact struct {
 	DataType  string `json:"dataType"`
