@@ -42,7 +42,7 @@ type FileTask struct {
 // FileTaskMeta represents meta data of the file observable
 type FileTaskMeta struct {
 	DataType string `json:"dataType"`
-	TLP      int    `json:"tlp"`
+	TLP      *int   `json:"tlp,omitempty"`
 }
 
 // Type usually returns just "file" for a file task
