@@ -21,7 +21,9 @@ const (
 
 	userAgent = "go-cortex/" + libraryVersion
 	mediaType = "application/json"
+)
 
+var (
 	// TLPWhite represents non-limited disclosure.
 	TLPWhite = 0
 
