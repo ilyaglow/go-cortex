@@ -178,7 +178,7 @@ func (j *JobServiceOp) WaitForAJob(ctx context.Context, jid string, d time.Durat
 	var job Job
 	resp, err := j.client.Do(ctx, req, &job)
 	if err != nil {
-		return nil, nil, err
+		return nil, resp, err
 	}
 
 	return &job, resp, err
