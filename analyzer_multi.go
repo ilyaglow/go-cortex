@@ -13,7 +13,7 @@ type MultiRun struct {
 	Timeout  time.Duration
 	ctx      context.Context
 	OnReport func(*Report)
-	OnError  func(error)
+	OnError  func(error, Observable, *Analyzer)
 }
 
 // NewMultiRun is a function that bootstraps MultiRun struct
@@ -70,19 +70,19 @@ func (m *MultiRun) AnalyzeFile(wg *sync.WaitGroup, ft *FileTask, ans ...Analyzer
 			FileTaskMeta: ft.FileTaskMeta,
 		}
 
-		go func(an Analyzer, f io.Reader) error {
+		go func(an Analyzer) error {
 			defer wg.Done()
 
 			report, err := m.aso.run(m.ctx, an.ID, o, m.Timeout)
 			if err != nil && m.OnError != nil {
-				m.OnError(err)
+				m.OnError(err, o, &an)
 			}
 			if err == nil && report != nil && m.OnReport != nil {
 				m.OnReport(report)
 			}
 
 			return nil
-		}(ans[i], fr)
+		}(ans[i])
 	}
 
 	wr := make([]io.Writer, len(writePipes))
@@ -112,7 +112,7 @@ func (m *MultiRun) AnalyzeString(wg *sync.WaitGroup, t *Task, ans ...Analyzer) e
 
 			report, err := m.aso.run(m.ctx, an.ID, t, m.Timeout)
 			if err != nil && m.OnError != nil {
-				m.OnError(err)
+				m.OnError(err, t, &an)
 			}
 			if err == nil && report != nil && m.OnReport != nil {
 				m.OnReport(report)
