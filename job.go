@@ -61,6 +61,7 @@ type Job struct {
 	ID                   string `json:"id"`
 	AnalyzerDefinitionID string `json:"analyzerDefinitionId"`
 	AnalyzerID           string `json:"analyzerID"`
+	AnalyzerName         string `json:"analyzerName"`
 	Status               string `json:"status"`
 	Organization         string `json:"organization"`
 	StartDate            int64  `json:"startDate"`
