@@ -2,6 +2,7 @@ package cortex
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -137,6 +138,10 @@ func (a *AnalyzerServiceOp) run(ctx context.Context, id string, o Observable, d 
 	if err != nil {
 		if resp != nil && resp.StatusCode == 500 {
 			return nil, fmt.Errorf("job passed maximum execution time %s", d.String())
+		}
+
+		if resp != nil && resp.StatusCode == 429 {
+			return nil, errors.New("rate limit exceeded")
 		}
 
 		return nil, err
