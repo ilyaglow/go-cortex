@@ -96,7 +96,7 @@ func main() {
 		log.Println(r)
 	}
 	mul.OnError = func(e error, o cortex.Observable, a *cortex.Analyzer) {
-		log.Printf("Cortex analyzer %s failed on data %s with an error: %s", a.AnalyzerName, o.Description(), e.Error())
+		log.Printf("Cortex analyzer %s failed on data %s with an error: %s", a.Name, o.Description(), e.Error())
 	}
 
 	// Actually run the analysis
