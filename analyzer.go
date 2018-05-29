@@ -164,7 +164,6 @@ func (a *AnalyzerServiceOp) StartJob(ctx context.Context, anid string, o Observa
 		if err != nil {
 			return nil, nil, err
 		}
-
 	}
 
 	var j Job

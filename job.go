@@ -17,7 +17,7 @@ const (
 type Task struct {
 	Data       string      `json:"data,omitempty"`
 	DataType   string      `json:"dataType,omitempty"`
-	TLP        int         `json:"tlp,omitempty"`
+	TLP        *int        `json:"tlp,omitempty"`
 	Message    string      `json:"message,omitempty"`
 	Parameters interface{} `json:"parameters,omitempty"`
 }
@@ -74,10 +74,10 @@ type Job struct {
 
 // Taxonomy represents a taxonomy object in a report
 type Taxonomy struct {
-	Predicate string `json:"predicate"`
-	Namespace string `json:"namespace"`
-	Value     string `json:"value"`
-	Level     string `json:"level"`
+	Predicate string      `json:"predicate"`
+	Namespace string      `json:"namespace"`
+	Value     interface{} `json:"value"`
+	Level     string      `json:"level"`
 }
 
 // Report represents a struct returned by the Cortex
