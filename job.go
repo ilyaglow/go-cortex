@@ -126,7 +126,7 @@ type Observable interface {
 type JobService interface {
 	Get(context.Context, string) (*Job, *http.Response, error)
 	GetReport(context.Context, string) (*Report, *http.Response, error)
-	WaitForAJob(context.Context, string, time.Duration) (*Job, *http.Response, error)
+	WaitReport(context.Context, string, time.Duration) (*Report, *http.Response, error)
 }
 
 // JobServiceOp handles cases methods from TheHive API
@@ -166,20 +166,23 @@ func (j *JobServiceOp) GetReport(ctx context.Context, jobid string) (*Report, *h
 	return &r, resp, nil
 }
 
-// WaitForAJob synchronously waits a certain job id for a specified duration of time
+// WaitReport synchronously waits a certain job id for a specified duration of time
 // and returns a report
-func (j *JobServiceOp) WaitForAJob(ctx context.Context, jid string, d time.Duration) (*Job, *http.Response, error) {
+func (j *JobServiceOp) WaitReport(ctx context.Context, jid string, d time.Duration) (*Report, *http.Response, error) {
 	sd := strconv.FormatFloat(d.Seconds(), 'f', 2, 64) + "seconds"
 	req, err := j.client.NewRequest("GET", fmt.Sprintf(jobsURL+"/%s/waitreport?atMost=%s", jid, sd), nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var job Job
-	resp, err := j.client.Do(ctx, req, &job)
+	var report Report
+	resp, err := j.client.Do(ctx, req, &report)
 	if err != nil {
-		return nil, resp, err
+		if resp != nil {
+			return nil, resp, err
+		}
+		return nil, nil, err
 	}
 
-	return &job, resp, err
+	return &report, resp, err
 }

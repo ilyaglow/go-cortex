@@ -133,21 +133,16 @@ func (a *AnalyzerServiceOp) run(ctx context.Context, id string, o Observable, d 
 	}
 
 	jso := &JobServiceOp{a.client}
-	_, resp, err := jso.WaitForAJob(ctx, j.ID, d)
+	report, resp, err := jso.WaitReport(ctx, j.ID, d)
 	if err != nil {
+		if resp != nil && resp.StatusCode == 500 {
+			return nil, fmt.Errorf("job passed maximum execution time %s", d.String())
+		}
+
 		return nil, err
 	}
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("error waiting for a job report %s", resp.Status)
-	}
-
-	r, _, err := jso.GetReport(ctx, j.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, err
+	return report, err
 }
 
 // StartJob starts observable analysis
