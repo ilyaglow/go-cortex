@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	libraryVersion = "2.1.7"
+	libraryVersion = "2.3.0"
 
 	// APIRoute represents a prefix path
 	APIRoute = "api"
