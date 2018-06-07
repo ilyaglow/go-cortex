@@ -10,13 +10,11 @@ This version is not compatible with Cortex v1 version.
 
 I tried to avoid limitations, pitfalls and antipatterns from the previous version, so I even changed a whole approach in a couple places. Hope you'll enjoy it.
 
-Eventually, v2 branch will became the master branch.
-
 ## Usage example
 
 Get latest library
 ```
-go get -u gopkg.ilya.app/ilyaglow/go-cortex.v2
+go get -u github.com/ilyaglow/go-cortex
 ```
 
 ### Simply run analyzer for an observable
