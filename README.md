@@ -28,7 +28,7 @@ import (
 	"log"
 	"time"
 
-	"gopkg.ilya.app/ilyaglow/go-cortex.v2"
+	"github.com/ilyaglow/go-cortex"
 )
 
 func main() {
@@ -69,7 +69,7 @@ import (
 	"os"
 	"time"
 
-	"gopkg.ilya.app/ilyaglow/go-cortex.v2"
+	"github.com/ilyaglow/go-cortex"
 )
 
 func main() {
