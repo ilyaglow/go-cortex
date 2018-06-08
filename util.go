@@ -103,7 +103,7 @@ func (j *JobInput) PrintError(err error) {
 	}
 
 	body, merr := json.Marshal(r)
-	if err != nil {
+	if merr != nil {
 		log.Fatal(merr)
 	}
 
