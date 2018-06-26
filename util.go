@@ -186,24 +186,39 @@ func (c cfg) NeedExtractArtifacts() bool {
 	return res
 }
 
-// client returns proxified *http.Client using http proxy, specified by a user
-func (c cfg) client() *http.Client {
-	proxy, ok := c["Proxy"]
-	if !ok {
-		return http.DefaultClient
+// httpClient returns proxified *http.Client using http proxy, specified by a user.
+// If proxy_http is defined in configuration it will be used as a proxy,
+// otherwise it will try proxy_https.
+// Be aware that Go doesn't support parsing url with basic auth credentials
+// that contain special characters: https://github.com/golang/go/issues/23392
+//
+// This function will return a http.DefaultClient if url.Parse will fail.
+func (c cfg) httpClient() *http.Client {
+	proxyHTTP, err := c.GetString("proxy_http")
+	if err == nil && proxyHTTP != "" {
+		proxyURL, err := url.Parse(proxyHTTP)
+		if err == nil {
+			return &http.Client{
+				Transport: &http.Transport{
+					Proxy: http.ProxyURL(proxyURL),
+				},
+			}
+		}
 	}
 
-	mProxy := proxy.(map[string]string)
-	proxyURL, err := url.Parse(mProxy["http"])
-	if err != nil {
-		return http.DefaultClient
+	proxyHTTPS, err := c.GetString("proxy_https")
+	if err == nil && proxyHTTPS != "" {
+		proxyURL, err := url.Parse(proxyHTTPS)
+		if err == nil {
+			return &http.Client{
+				Transport: &http.Transport{
+					Proxy: http.ProxyURL(proxyURL),
+				},
+			}
+		}
 	}
 
-	return &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyURL(proxyURL),
-		},
-	}
+	return http.DefaultClient
 }
 
 // GetString is a getter for string type
@@ -286,7 +301,7 @@ func NewInput() (*JobInput, *http.Client, error) {
 
 	v, err := in.Config.GetBool("check_tlp")
 	if err != nil {
-		return in, in.Config.client(), nil // if check_tlp is not found do not check for it
+		return in, in.Config.httpClient(), nil // if check_tlp is not found do not check for it
 	}
 
 	if v && !in.allowedTLP() {
@@ -294,7 +309,7 @@ func NewInput() (*JobInput, *http.Client, error) {
 		return nil, nil, nil
 	}
 
-	return in, in.Config.client(), nil
+	return in, in.Config.httpClient(), nil
 }
 
 func parseInput(f io.Reader) (*JobInput, error) {

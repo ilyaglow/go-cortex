@@ -2,6 +2,8 @@ package cortex
 
 import (
 	"bytes"
+	"errors"
+	"net/http"
 	"reflect"
 	"testing"
 )
@@ -15,48 +17,57 @@ var sampleConfig = []byte(`
         "key": "1234567890abcdef",
         "max_tlp": 3,
         "check_tlp": true,
-        "service": "GetReport"
-    },
-    "proxy": {
-        "http": "http://myproxy:8080",
-        "https": "https://myproxy:8080"
+        "service": "GetReport",
+        "proxy_http": "http://user:pass@myproxy:8080",
+        "proxy_https": "https://user:pass@myproxy:8080",
+        "proxy": {
+            "http": "http://myproxy:8080",
+            "https": "https://myproxy:8080"
+        }
     }
 }
 `)
 
-var sampleReader = bytes.NewReader(sampleConfig)
-
 func TestGetters(t *testing.T) {
-	ai, err := parseInput(sampleReader)
+	var getterTests = []struct {
+		key   string
+		value interface{}
+		err   error
+	}{
+		{"service", "GetReport", nil},
+		{"check_tlp", true, nil},
+		{"max_tlp", 3.0, nil},
+		{"nonexistent", false, errors.New("Not such key: nonexistent")},
+		{"proxy_http", "http://user:pass@myproxy:8080", nil},
+	}
+
+	ai, err := parseInput(bytes.NewReader(sampleConfig))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := ai.Config.GetString("service")
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, p := range getterTests {
+		var (
+			val interface{}
+			err error
+		)
 
-	if s != "GetReport" {
-		t.Fatalf("need GetReport, got %s", s)
-	}
+		switch p.value.(type) {
+		case string:
+			val, err = ai.Config.GetString(p.key)
+		case float64:
+			val, err = ai.Config.GetFloat(p.key)
+		case bool:
+			val, err = ai.Config.GetBool(p.key)
+		}
 
-	f, err := ai.Config.GetFloat("max_tlp")
-	if err != nil {
-		t.Fatal(err)
-	}
+		if !reflect.DeepEqual(p.err, err) {
+			t.Fatal(err)
+		}
 
-	if f != 3 {
-		t.Fatalf("need 3, got %f", f)
-	}
-
-	b, err := ai.Config.GetBool("check_tlp")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if b != true {
-		t.Fatalf("need true, got %t", b)
+		if val != p.value {
+			t.Fatalf("need %v, got %v", p.value, val)
+		}
 	}
 }
 
@@ -94,4 +105,16 @@ func artifactsToMap(as []ExtractedArtifact) map[string][]string {
 	}
 
 	return m
+}
+
+func TestProxyHandling(t *testing.T) {
+	ai, err := parseInput(bytes.NewReader(sampleConfig))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client := ai.Config.httpClient()
+	if reflect.DeepEqual(client, http.DefaultClient) {
+		t.Fatalf("failed to bootstrap proxy server %v", client)
+	}
 }
