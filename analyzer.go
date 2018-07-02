@@ -50,7 +50,7 @@ type AnalyzerServiceOp struct {
 	client *Client
 }
 
-// Get a specified Cortex analyzer
+// Get a specified Cortex analyzer by its name
 func (a *AnalyzerServiceOp) Get(ctx context.Context, id string) (*Analyzer, *http.Response, error) {
 	als, resp, err := a.List(ctx)
 	if err != nil {
@@ -82,21 +82,35 @@ func (a *AnalyzerServiceOp) Get(ctx context.Context, id string) (*Analyzer, *htt
 	return &an, resp, err
 }
 
-// List all Cortex analyzers
+// List all Cortex analyzers with pagination
 func (a *AnalyzerServiceOp) List(ctx context.Context) ([]Analyzer, *http.Response, error) {
 	var analyzers []Analyzer
 
-	req, err := a.client.NewRequest("GET", analyzersURL, nil)
-	if err != nil {
-		return nil, nil, err
+	start := 0
+
+	for {
+		pagedURL := fmt.Sprintf("%s?range=%d-%d", analyzersURL, start, a.client.PageSize)
+		req, err := a.client.NewRequest("GET", pagedURL, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		var paginatedAns []Analyzer
+		resp, err := a.client.Do(ctx, req, &paginatedAns)
+		if err != nil {
+			return nil, resp, err
+		}
+
+		if len(paginatedAns) < a.client.PageSize {
+			analyzers = append(analyzers, paginatedAns...)
+			break
+		}
+
+		analyzers = append(analyzers, paginatedAns...)
+		start = start + a.client.PageSize
 	}
 
-	resp, err := a.client.Do(ctx, req, &analyzers)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return analyzers, resp, nil
+	return analyzers, nil, nil
 }
 
 // ListByType lists Cortex analyzers by datatype
