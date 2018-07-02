@@ -44,7 +44,7 @@ func main() {
 	rep, err := crtx.Analyzers.Run(context.Background(), "MaxMind_GeoIP_3_0", &cortex.Task{
 		Data:     "1.1.1.1",
 		DataType: "ip",
-		TLP: &cortex.TLPGreen,
+		TLP:      &cortex.TLPGreen,
 	}, time.Minute*5)
 	if err != nil {
 		log.Fatal(err)
@@ -84,7 +84,7 @@ func main() {
 
 	task := &cortex.Task{
 		Data: "1.1.1.1",
-        DataType: "ip",
+		DataType: "ip",
 		TLP: &cortex.TLPWhite,
 	}
 
