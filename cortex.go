@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	libraryVersion = "2.3.0"
+	libraryVersion = "2.3.2"
 
 	// APIRoute represents a prefix path
 	APIRoute = "api"
@@ -37,7 +37,7 @@ var (
 	TLPRed = 3
 )
 
-// Client is used to communicate with TheHive API
+// Client is used to communicate with Cortex API
 type Client struct {
 	Client    *http.Client
 	BaseURL   *url.URL
@@ -53,7 +53,7 @@ type ClientOpts struct {
 	Auth auth
 }
 
-// NewClient bootstraps a client to interact with TheHive API
+// NewClient bootstraps a client to interact with Cortex API
 func NewClient(baseurl string, opts *ClientOpts) (*Client, error) {
 	u, err := url.Parse(baseurl)
 	if err != nil {
