@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 const (
@@ -61,7 +62,9 @@ func NewClient(baseurl string, opts *ClientOpts) (*Client, error) {
 	}
 
 	c := &Client{
-		Client:    http.DefaultClient,
+		Client: &http.Client{
+			Timeout: time.Minute * 5,
+		},
 		BaseURL:   u,
 		UserAgent: userAgent,
 		Opts:      opts,
