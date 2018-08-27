@@ -3,10 +3,10 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/1d131300c6864599b5335f2439b7e2d4)](https://www.codacy.com/app/ilyaglow/go-cortex?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ilyaglow/go-cortex&amp;utm_campaign=Badge_Grade)
 [![Coverage Status](https://coveralls.io/repos/github/ilyaglow/go-cortex/badge.svg?branch=v2)](https://coveralls.io/github/ilyaglow/go-cortex?branch=v2)
 
-[WIP] Cortex v2 client library
+Cortex v2 client library
 ------------------------------
 
-This version is not compatible with Cortex v1 version.
+This version is not compatible with [Cortex v1 version](https://github.com/ilyaglow/go-cortex/tree/v1).
 
 I tried to avoid limitations, pitfalls and antipatterns from the previous version, so I even changed a whole approach in a couple places. Hope you'll enjoy it.
 
