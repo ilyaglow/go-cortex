@@ -43,6 +43,24 @@ func TestListByTypeAnalyzers(t *testing.T) {
 	}
 }
 
+func TestDataTypes(t *testing.T) {
+	client, mux, _, closer := setup()
+	defer closer()
+
+	mux.HandleFunc("/"+analyzersURL, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write(analyzersJSON)
+	})
+
+	got, err := client.Analyzers.DataTypes(context.Background())
+	if err != nil {
+		t.Errorf("Analyzer.DataTypes returned error: %v", err)
+	}
+	if want := dataTypes; !reflect.DeepEqual(want, got) {
+		t.Errorf("Analyzer.DataTypes = %+v, want %+v", got, want)
+	}
+}
+
 var analyzerType = "ip"
 
 var analyzersJSON = []byte(`
@@ -109,3 +127,5 @@ var wantList = []Analyzer{
 		Version:       "3.0",
 	},
 }
+
+var dataTypes = []string{"ip"}

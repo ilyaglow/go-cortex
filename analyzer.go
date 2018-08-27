@@ -43,6 +43,7 @@ type AnalyzerService interface {
 	Run(context.Context, string, Observable, time.Duration) (*Report, error)
 	StartJob(context.Context, string, Observable) (*Job, *http.Response, error)
 	NewMultiRun(context.Context, time.Duration) *MultiRun
+	DataTypes(context.Context) ([]string, error)
 }
 
 // AnalyzerServiceOp handles analyzer methods from Cortex API
@@ -192,4 +193,33 @@ func (a *AnalyzerServiceOp) StartJob(ctx context.Context, anid string, o Observa
 	}
 
 	return &j, resp, nil
+}
+
+// DataTypes returns all available data types that Cortex can analyse.
+// The entries are not sorted.
+func (a *AnalyzerServiceOp) DataTypes(ctx context.Context) ([]string, error) {
+	ans, _, err := a.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dtm := make(map[string]bool)
+	for _, a := range ans {
+		addDataTypes(dtm, a.DataTypeList)
+	}
+
+	var dts []string
+	for k := range dtm {
+		dts = append(dts, k)
+	}
+
+	return dts, nil
+}
+
+func addDataTypes(m map[string]bool, dts []string) {
+	for _, dt := range dts {
+		if _, ok := m[dt]; !ok {
+			m[dt] = true
+		}
+	}
 }
