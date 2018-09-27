@@ -13,10 +13,13 @@ var sampleConfig = []byte(`
     "data": "d41d8cd98f00b204e9800998ecf8427e",
     "dataType": "hash",
     "tlp": 0,
+	"pap": 1,
     "config": {
         "key": "1234567890abcdef",
         "max_tlp": 3,
+        "max_pap": 2,
         "check_tlp": true,
+        "check_pap": true,
         "service": "GetReport",
         "proxy_http": "http://user:pass@myproxy:8080",
         "proxy_https": "https://user:pass@myproxy:8080",
@@ -36,7 +39,9 @@ func TestGetters(t *testing.T) {
 	}{
 		{"service", "GetReport", nil},
 		{"check_tlp", true, nil},
+		{"check_pap", true, nil},
 		{"max_tlp", 3.0, nil},
+		{"max_pap", 2.0, nil},
 		{"nonexistent", false, errors.New("Not such key: nonexistent")},
 		{"proxy_http", "http://user:pass@myproxy:8080", nil},
 	}

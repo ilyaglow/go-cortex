@@ -18,6 +18,7 @@ type Task struct {
 	Data       string      `json:"data,omitempty"`
 	DataType   string      `json:"dataType,omitempty"`
 	TLP        *int        `json:"tlp,omitempty"`
+	PAP        *int        `json:"pap,omitempty"`
 	Message    string      `json:"message,omitempty"`
 	Parameters interface{} `json:"parameters,omitempty"`
 }
@@ -43,6 +44,7 @@ type FileTask struct {
 type FileTaskMeta struct {
 	DataType string `json:"dataType"`
 	TLP      *int   `json:"tlp,omitempty"`
+	PAP      *int   `json:"pap,omitempty"`
 }
 
 // Type usually returns just "file" for a file task
@@ -99,6 +101,7 @@ type Artifact struct {
 	CreatedAt int64  `json:"createdAt"`
 	Data      string `json:"data"`
 	TLP       int    `json:"tlp"`
+	PAP       int    `json:"pap"`
 	ID        string `json:"id"`
 }
 

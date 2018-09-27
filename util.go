@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/asaskevich/govalidator"
 )
@@ -64,6 +65,7 @@ type cfg map[string]interface{}
 type JobInput struct {
 	DataType    string            `json:"dataType"`
 	TLP         int               `json:"tlp,omitempty"`
+	PAP         int               `json:"pap,omitempty"`
 	Data        string            `json:"data,omitempty"`
 	File        string            `json:"file,omitempty"`
 	FileName    string            `json:"filename,omitempty"`
@@ -146,6 +148,19 @@ func (j *JobInput) allowedTLP() bool {
 	}
 
 	if j.TLP > int(maxtlp) {
+		return false
+	}
+	return true
+}
+
+func (j *JobInput) allowedPAP() bool {
+	// if maxpap is not set, make it to maximum
+	maxpap, err := j.Config.GetFloat("max_pap")
+	if err != nil {
+		maxpap = 3
+	}
+
+	if j.PAP > int(maxpap) {
 		return false
 	}
 	return true
@@ -299,17 +314,46 @@ func NewInput() (*JobInput, *http.Client, error) {
 		return nil, http.DefaultClient, err
 	}
 
-	v, err := in.Config.GetBool("check_tlp")
-	if err != nil {
-		return in, in.Config.httpClient(), nil // if check_tlp is not found do not check for it
+	var errs []string
+	if terr := in.checkTLP(); terr != nil {
+		errs = append(errs, terr.Error())
 	}
 
-	if v && !in.allowedTLP() {
-		in.PrintError(errors.New("TLP is higher than allowed"))
-		return nil, nil, nil
+	if perr := in.checkPAP(); perr != nil {
+		errs = append(errs, perr.Error())
+	}
+
+	if len(errs) > 0 {
+		in.PrintError(errors.New(strings.Join(errs, ", ")))
 	}
 
 	return in, in.Config.httpClient(), nil
+}
+
+func (j *JobInput) checkTLP() error {
+	_, err := j.Config.GetBool("check_tlp")
+	if err != nil {
+		return nil // if check_tlp is not found do not check for it
+	}
+
+	if !j.allowedTLP() {
+		return errors.New("TLP is higher than allowed")
+	}
+
+	return nil
+}
+
+func (j *JobInput) checkPAP() error {
+	_, err := j.Config.GetBool("check_pap")
+	if err != nil {
+		return nil // if check_tlp is not found do not check for it
+	}
+
+	if !j.allowedPAP() {
+		return errors.New("PAP is higher than allowed")
+	}
+
+	return nil
 }
 
 func parseInput(f io.Reader) (*JobInput, error) {
