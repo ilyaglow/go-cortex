@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	libraryVersion = "2.3.2"
+	libraryVersion = "2.4.0"
 
 	// APIRoute represents a prefix path
 	APIRoute = "api"
@@ -35,6 +35,30 @@ var (
 
 	// TLPRed is not for disclosure, restricted to participants only.
 	TLPRed = 3
+
+	// PAPWhite represents no restrictions in using information.
+	// Source: https://github.com/MISP/misp-taxonomies/blob/master/PAP/machinetag.json#L24
+	PAPWhite = TLPWhite
+
+	// PAPGreen - active actions allowed.
+	// Recipients may use PAP:GREEN information to ping the target,
+	// block incoming/outgoing traffic from/to the target
+	// or specifically configure honeypots to interact with the target
+	// Source: https://github.com/MISP/misp-taxonomies/blob/master/PAP/machinetag.json#L19
+	PAPGreen = TLPGreen
+
+	// PAPAmber - passive cross check.
+	// Recipients may use PAP:AMBER information for conducting online checks,
+	// like using services provided by third parties (e.g. VirusTotal),
+	// or set up a monitoring honeypot.
+	// Source: https://github.com/MISP/misp-taxonomies/blob/master/PAP/machinetag.json#L14
+	PAPAmber = TLPAmber
+
+	// PAPRed - non-detectable actions only.
+	// Recipients may not use PAP:RED information on the network.
+	// Only passive actions on logs, that are not detectable from the outside.
+	// Source: https://github.com/MISP/misp-taxonomies/blob/master/PAP/machinetag.json#L9
+	PAPRed = TLPRed
 )
 
 // Client is used to communicate with Cortex API

@@ -91,7 +91,9 @@ var analyzersJSON = []byte(`
       "proxy_https": null,
       "auto_extract_artifacts": false,
       "check_tlp": true,
-      "max_tlp": 3
+      "check_pap": true,
+      "max_tlp": 3,
+      "max_pap": 2
     }
   }
 ]
@@ -102,7 +104,9 @@ var config = map[string]interface{}{
 	"proxy_https":            nil,
 	"auto_extract_artifacts": false,
 	"check_tlp":              true,
+	"check_pap":              true,
 	"max_tlp":                float64(3),
+	"max_pap":                float64(2),
 }
 
 var wantList = []Analyzer{
