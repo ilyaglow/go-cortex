@@ -45,6 +45,7 @@ func main() {
 		Data:     "1.1.1.1",
 		DataType: "ip",
 		TLP:      &cortex.TLPGreen,
+		PAP:      &cortex.PAPGreen,
 	}, time.Minute*5)
 	if err != nil {
 		log.Fatal(err)
@@ -86,6 +87,7 @@ func main() {
 		Data: "1.1.1.1",
 		DataType: "ip",
 		TLP: &cortex.TLPWhite,
+		PAP: &cortex.PAPWhite,
 	}
 
 	// Create new MultiRun struct
