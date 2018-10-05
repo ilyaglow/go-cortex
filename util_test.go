@@ -12,8 +12,8 @@ var sampleConfig = []byte(`
 {
     "data": "d41d8cd98f00b204e9800998ecf8427e",
     "dataType": "hash",
-    "tlp": 0,
-	"pap": 1,
+    "tlp": 1,
+    "pap": 1,
     "config": {
         "key": "1234567890abcdef",
         "max_tlp": 3,
@@ -42,7 +42,7 @@ func TestGetters(t *testing.T) {
 		{"check_pap", true, nil},
 		{"max_tlp", 3.0, nil},
 		{"max_pap", 2.0, nil},
-		{"nonexistent", false, errors.New("Not such key: nonexistent")},
+		{"nonexistent", false, errors.New("no such key: nonexistent")},
 		{"proxy_http", "http://user:pass@myproxy:8080", nil},
 	}
 
@@ -121,5 +121,54 @@ func TestProxyHandling(t *testing.T) {
 	client := ai.Config.httpClient()
 	if reflect.DeepEqual(client, http.DefaultClient) {
 		t.Fatalf("failed to bootstrap proxy server %v", client)
+	}
+}
+
+func TestSharingControls(t *testing.T) {
+	var inputs = []struct {
+		ji   JobInput
+		errs []error
+	}{
+		{
+			JobInput{
+				TLP: 3,
+				Config: cfg{
+					"max_tlp":   1.0,
+					"check_tlp": true,
+				},
+			},
+			[]error{errTooHighTLP, nil},
+		}, {
+			JobInput{
+				PAP: 3,
+				Config: cfg{
+					"max_pap":   1.0,
+					"check_pap": true,
+				},
+			},
+			[]error{nil, errTooHighPAP},
+		}, {
+			JobInput{
+				PAP: 3,
+				TLP: 3,
+				Config: cfg{
+					"max_pap":   1.0,
+					"check_pap": true,
+					"max_tlp":   1.0,
+					"check_tlp": true,
+				},
+			},
+			[]error{errTooHighTLP, errTooHighPAP},
+		},
+	}
+
+	for _, p := range inputs {
+		got := append([]error{}, p.ji.checkTLP(), p.ji.checkPAP())
+		if !reflect.DeepEqual(
+			p.errs,
+			got,
+		) {
+			t.Fatalf("need %v, got %v", p.errs, got)
+		}
 	}
 }

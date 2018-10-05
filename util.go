@@ -43,6 +43,13 @@ var (
 	rxURL            = regexp.MustCompile(govalidator.URLSchema + govalidator.URLUsername + `?` + `((` + govalidator.URLIP + `|(\[` + govalidator.IP + `\])|(([a-zA-Z0-9]([a-zA-Z0-9-_]+)?[a-zA-Z0-9]([-\.][a-zA-Z0-9]+)*)|(` + govalidator.URLSubdomain + `?))?(([a-zA-Z\x{00a1}-\x{ffff}0-9]+-?-?)*[a-zA-Z\x{00a1}-\x{ffff}0-9]+)(?:\.([a-zA-Z\x{00a1}-\x{ffff}]{1,}))?))\.?` + govalidator.URLPort + `?` + govalidator.URLPath + `?`)
 	rxUserAgent      = regexp.MustCompile(`Mozilla/[0-9]\.[0-9] \(([A-Za-z0-9 \/._]+;){1,3} ([A-Za-z0-9 \/.:_]+){0,2}\)( ([A-Za-z0-9 \/.]+){1} \(KHTML, like Gecko\)){0,1} ([A-Za-z0-9 \/.]+){2,3}`)
 	rxBitcoinAddress = regexp.MustCompile(`[13][a-km-zA-HJ-NP-Z1-9]{25,34}`)
+
+	// DefaultInput represents an analyzer or responder input that is used by
+	// default
+	DefaultInput = os.Stdin
+
+	errTooHighTLP = errors.New("TLP is higher than allowed")
+	errTooHighPAP = errors.New("PAP is higher than allowed")
 )
 
 // Rxs represents map of regexes
@@ -246,7 +253,7 @@ func (c cfg) GetString(key string) (string, error) {
 	)
 
 	if val, ok = c[key]; !ok {
-		return "", fmt.Errorf("Not such key: %s", key)
+		return "", fmt.Errorf("no such key: %s", key)
 	}
 
 	switch val.(type) {
@@ -254,7 +261,7 @@ func (c cfg) GetString(key string) (string, error) {
 		res = val.(string)
 	default:
 		res = ""
-		err = fmt.Errorf("Wrong type chosen for key %s: (%T)", key, val)
+		err = fmt.Errorf("wrong type chosen for the key %s: (%T)", key, val)
 	}
 
 	return res, err
@@ -270,7 +277,7 @@ func (c cfg) GetFloat(key string) (float64, error) {
 	)
 
 	if val, ok = c[key]; !ok {
-		return 0, fmt.Errorf("Not such key: %s", key)
+		return 0, fmt.Errorf("no such key: %s", key)
 	}
 
 	switch val.(type) {
@@ -278,7 +285,7 @@ func (c cfg) GetFloat(key string) (float64, error) {
 		res = val.(float64)
 	default:
 		res = 0
-		err = fmt.Errorf("Wrong type chosen for key %s: (%T)", key, val)
+		err = fmt.Errorf("wrong type chosen for the key %s: (%T)", key, val)
 	}
 
 	return res, err
@@ -294,7 +301,7 @@ func (c cfg) GetBool(key string) (bool, error) {
 	)
 
 	if val, ok = c[key]; !ok {
-		return false, fmt.Errorf("Not such key: %s", key)
+		return false, fmt.Errorf("no such key: %s", key)
 	}
 
 	switch val.(type) {
@@ -302,14 +309,19 @@ func (c cfg) GetBool(key string) (bool, error) {
 		res = val.(bool)
 	default:
 		res = false
-		err = fmt.Errorf("Wrong type chosen for key %s: (%T)", key, val)
+		err = fmt.Errorf("wrong type chosen for the key %s: (%T)", key, val)
 	}
 	return res, err
 }
 
-// NewInput grabs stdin and bootstraps *JobInput and *http.Client
+// NewInput grabs DefaultInput (stdin by default) and bootstraps *JobInput and
+// *http.Client
 func NewInput() (*JobInput, *http.Client, error) {
-	in, err := parseInput(os.Stdin)
+	return newInput(DefaultInput)
+}
+
+func newInput(r io.Reader) (*JobInput, *http.Client, error) {
+	in, err := parseInput(r)
 	if err != nil {
 		return nil, http.DefaultClient, err
 	}
@@ -331,26 +343,26 @@ func NewInput() (*JobInput, *http.Client, error) {
 }
 
 func (j *JobInput) checkTLP() error {
-	_, err := j.Config.GetBool("check_tlp")
+	v, err := j.Config.GetBool("check_tlp")
 	if err != nil {
 		return nil // if check_tlp is not found do not check for it
 	}
 
-	if !j.allowedTLP() {
-		return errors.New("TLP is higher than allowed")
+	if v && !j.allowedTLP() {
+		return errTooHighTLP
 	}
 
 	return nil
 }
 
 func (j *JobInput) checkPAP() error {
-	_, err := j.Config.GetBool("check_pap")
+	v, err := j.Config.GetBool("check_pap")
 	if err != nil {
 		return nil // if check_tlp is not found do not check for it
 	}
 
-	if !j.allowedPAP() {
-		return errors.New("PAP is higher than allowed")
+	if v && !j.allowedPAP() {
+		return errTooHighPAP
 	}
 
 	return nil
@@ -366,7 +378,6 @@ func parseInput(f io.Reader) (*JobInput, error) {
 			break
 		}
 		if err != nil && err != io.EOF {
-			log.Println(err)
 			return nil, err
 		}
 	}
