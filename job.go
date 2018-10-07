@@ -47,7 +47,7 @@ type FileTaskMeta struct {
 	PAP      *int   `json:"pap,omitempty"`
 }
 
-// Type usually returns just "file" for a file task
+// Type usually returns just a string "file" for a file task
 func (f *FileTask) Type() string {
 	return f.FileTaskMeta.DataType
 }
@@ -133,7 +133,7 @@ type JobService interface {
 	WaitReport(context.Context, string, time.Duration) (*Report, *http.Response, error)
 }
 
-// JobServiceOp handles cases methods from TheHive API
+// JobServiceOp handles cases methods from the Cortex API
 type JobServiceOp struct {
 	client *Client
 }
