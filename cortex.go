@@ -70,6 +70,7 @@ type Client struct {
 	PageSize  int
 
 	Analyzers AnalyzerService
+	Users     UserService
 }
 
 // ClientOpts represent options that are passed to client
@@ -93,6 +94,7 @@ func NewClient(baseurl string, opts *ClientOpts) (*Client, error) {
 	}
 
 	c.Analyzers = &AnalyzerServiceOp{client: c}
+	c.Users = &UserServiceOp{client: c}
 
 	return c, nil
 }
