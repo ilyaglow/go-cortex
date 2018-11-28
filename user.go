@@ -27,7 +27,7 @@ type UserService interface {
 	Current(context.Context) (*User, *http.Response, error)
 }
 
-// UserServiceOp handles cases methods from TheHive API
+// UserServiceOp handles user specific methods from Cortex API
 type UserServiceOp struct {
 	client *Client
 }
