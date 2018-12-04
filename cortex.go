@@ -23,6 +23,10 @@ const (
 	mediaType = "application/json"
 )
 
+// Type var is used instead of const because a pointer is needed when
+// cortex.Task and cortex.FileTaskMeta structs are being marshalled. This will
+// enable omitting the value and force Cortex itself to use default TLP and PAP
+// for tasks: cortex.TLPAmber and cortex.PAPAmber.
 var (
 	// TLPWhite represents non-limited disclosure.
 	TLPWhite = 0
