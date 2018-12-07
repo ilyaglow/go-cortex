@@ -122,14 +122,18 @@ func (j *JobInput) PrintError(err error) {
 
 // PrintReport constructs Report by raw body and taxonomies
 func (j *JobInput) PrintReport(body interface{}, taxes []Taxonomy) {
-	mb, err := json.Marshal(body)
-	if err != nil {
-		log.Fatal(err)
+	artifacts := make([]ExtractedArtifact, 0)
+	if j.Config.NeedExtractArtifacts() && body != nil {
+		mb, err := json.Marshal(body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		artifacts = ExtractArtifacts(string(mb))
 	}
 
-	artifacts := make([]ExtractedArtifact, 0)
-	if j.Config.NeedExtractArtifacts() {
-		artifacts = ExtractArtifacts(string(mb))
+	if body == nil {
+		body = struct{}{}
 	}
 
 	r := &AnalyzerReport{
@@ -173,7 +177,7 @@ func (j *JobInput) allowedPAP() bool {
 	return true
 }
 
-// ExtractArtifacts extracts all artifacts from report string
+// ExtractArtifacts extracts all artifacts from the report string
 func ExtractArtifacts(body string) []ExtractedArtifact {
 	ars := []ExtractedArtifact{}
 	ma := make(map[string]bool)
@@ -198,7 +202,7 @@ func ExtractArtifacts(body string) []ExtractedArtifact {
 	return ars
 }
 
-// NeedExtractArtifacts checks if user wants to extract artifacts
+// NeedExtractArtifacts checks if a user wants to extract artifacts
 func (c cfg) NeedExtractArtifacts() bool {
 	res, err := c.GetBool("auto_extract_artifacts")
 	if err != nil {
