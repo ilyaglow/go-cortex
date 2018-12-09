@@ -23,6 +23,10 @@ const (
 	mediaType = "application/json"
 )
 
+// Type var is used instead of const because a pointer is needed when
+// cortex.Task and cortex.FileTaskMeta structs are being marshalled. This will
+// enable omitting the value and force Cortex itself to use default TLP and PAP
+// for tasks: cortex.TLPAmber and cortex.PAPAmber.
 var (
 	// TLPWhite represents non-limited disclosure.
 	TLPWhite = 0
@@ -70,6 +74,7 @@ type Client struct {
 	PageSize  int
 
 	Analyzers AnalyzerService
+	Users     UserService
 }
 
 // ClientOpts represent options that are passed to client
@@ -93,6 +98,7 @@ func NewClient(baseurl string, opts *ClientOpts) (*Client, error) {
 	}
 
 	c.Analyzers = &AnalyzerServiceOp{client: c}
+	c.Users = &UserServiceOp{client: c}
 
 	return c, nil
 }
