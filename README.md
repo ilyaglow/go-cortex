@@ -3,16 +3,12 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/1d131300c6864599b5335f2439b7e2d4)](https://www.codacy.com/app/ilyaglow/go-cortex?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ilyaglow/go-cortex&amp;utm_campaign=Badge_Grade)
 [![Coverage Status](https://coveralls.io/repos/github/ilyaglow/go-cortex/badge.svg?branch=v2)](https://coveralls.io/github/ilyaglow/go-cortex?branch=v2)
 
-Cortex v2 client library
-------------------------------
-
-This version is not compatible with [Cortex v1 version](https://github.com/ilyaglow/go-cortex/tree/v1).
-
-I tried to avoid limitations, pitfalls and antipatterns from the previous version, so I even changed a whole approach in a couple places. Hope you'll enjoy it.
+Cortex client library
+---------------------
 
 ## Usage example
 
-Get latest library
+Get the latest library version:
 ```
 go get -u github.com/ilyaglow/go-cortex
 ```
@@ -57,9 +53,12 @@ func main() {
 
 ### Aggregated analysis of an observable
 
-Could be used to analyze an observable by all analyzers that can work with it's data type at once. Previous implementation used a channel approach that seemed to me very limiting.
+Could be used to analyze an observable by all analyzers that can process it's
+data type at once.
 
-Now you can use callback functions when analyzer returns a report or an error.
+You should use callback functions to set an action for each analyzer, when one
+returns a report or an error.
+Take a look at the following example:
 
 ```go
 package main
@@ -90,11 +89,14 @@ func main() {
 		PAP: &cortex.PAPWhite,
 	}
 
-	// Create new MultiRun struct
+	// Create a new MultiRun struct with at most 5 minute timeout for the run
 	mul := crtx.Analyzers.NewMultiRun(context.Background(), 5*time.Minute)
+
+	// Handle each analyzer's report
 	mul.OnReport = func(r *cortex.Report) {
 		log.Println(r)
 	}
+	// Log each analyzer's error
 	mul.OnError = func(e error, o cortex.Observable, a *cortex.Analyzer) {
 		log.Printf("Cortex analyzer %s failed on data %s with an error: %s", a.Name, o.Description(), e.Error())
 	}
