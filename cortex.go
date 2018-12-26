@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -19,8 +18,10 @@ const (
 	// APIRoute represents a prefix path
 	APIRoute = "api"
 
-	userAgent = "go-cortex/" + libraryVersion
-	mediaType = "application/json"
+	userAgent     = "go-cortex/" + libraryVersion
+	mediaType     = "application/json"
+	errUnknownFmt = "http status: %s, unknown error"
+	errMessageFmt = "http status: %s, %s: %s"
 )
 
 // Type var is used instead of const because a pointer is needed when
@@ -80,6 +81,13 @@ type Client struct {
 // ClientOpts represent options that are passed to client
 type ClientOpts struct {
 	Auth auth
+}
+
+// errorMessage is the message that Cortex sends back to user when something
+// went wrong.
+type errorMessage struct {
+	Type    string `json:"type"`
+	Message string `json:"message"`
 }
 
 // NewClient bootstraps a client to interact with Cortex API
@@ -146,7 +154,7 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	return req, nil
 }
 
-// NewFileRequest creates and API request with file form
+// NewFileRequest creates an API request with a file http form.
 func (c *Client) NewFileRequest(method, urlStr string, body interface{}, fileName string, r io.Reader) (*http.Request, error) {
 	if !strings.HasSuffix(c.BaseURL.Path, "/") {
 		return nil, fmt.Errorf("BaseURL must have a trailing slash, but %q does not", c.BaseURL)
@@ -249,13 +257,18 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	return resp, err
 }
 
+// checkResponse checks http response status code and returns an error if
+// needed.
 func checkResponse(r *http.Response) error {
 	switch r.StatusCode {
 	case http.StatusOK:
 		return nil
-	case http.StatusUnauthorized:
-		return errors.New("unauthorized")
 	default:
-		return fmt.Errorf("unknown error %s", r.Status)
+		var em errorMessage
+		err := json.NewDecoder(r.Body).Decode(&em)
+		if err != nil {
+			return fmt.Errorf(errUnknownFmt, r.Status)
+		}
+		return fmt.Errorf(errMessageFmt, r.Status, em.Type, em.Message)
 	}
 }
