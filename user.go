@@ -5,7 +5,10 @@ import (
 	"net/http"
 )
 
-const usersURL = APIRoute + "/user"
+const (
+	usersURL    = APIRoute + "/user"
+	currentUser = usersURL + "/current"
+)
 
 // User represents a Cortex User
 type User struct {
@@ -34,7 +37,7 @@ type UserServiceOp struct {
 
 // Current retrieves a current user
 func (u *UserServiceOp) Current(ctx context.Context) (*User, *http.Response, error) {
-	req, err := u.client.NewRequest("GET", usersURL+"/current", nil)
+	req, err := u.client.NewRequest("GET", currentUser, nil)
 	if err != nil {
 		return nil, nil, err
 	}
