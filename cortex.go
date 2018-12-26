@@ -260,15 +260,14 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 // checkResponse checks http response status code and returns an error if
 // needed.
 func checkResponse(r *http.Response) error {
-	switch r.StatusCode {
-	case http.StatusOK:
+	if r.StatusCode == http.StatusOK {
 		return nil
-	default:
-		var em errorMessage
-		err := json.NewDecoder(r.Body).Decode(&em)
-		if err != nil {
-			return fmt.Errorf(errUnknownFmt, r.Status)
-		}
-		return fmt.Errorf(errMessageFmt, r.Status, em.Type, em.Message)
 	}
+
+	var em errorMessage
+	err := json.NewDecoder(r.Body).Decode(&em)
+	if err != nil {
+		return fmt.Errorf(errUnknownFmt, r.Status)
+	}
+	return fmt.Errorf(errMessageFmt, r.Status, em.Type, em.Message)
 }
