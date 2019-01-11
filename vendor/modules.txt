@@ -1,0 +1,2 @@
+# github.com/asaskevich/govalidator v0.0.0-20180319081651-7d2e70ef918f
+github.com/asaskevich/govalidator
