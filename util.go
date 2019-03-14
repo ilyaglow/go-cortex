@@ -71,8 +71,8 @@ type cfg map[string]interface{}
 // JobInput is used to track failed jobs and work with analyzer's input
 type JobInput struct {
 	DataType    string            `json:"dataType"`
-	TLP         int               `json:"tlp,omitempty"`
-	PAP         int               `json:"pap,omitempty"`
+	TLP         TLP               `json:"tlp,omitempty"`
+	PAP         PAP               `json:"pap,omitempty"`
 	Data        string            `json:"data,omitempty"`
 	File        string            `json:"file,omitempty"`
 	FileName    string            `json:"filename,omitempty"`
@@ -153,12 +153,15 @@ func (j *JobInput) PrintReport(body interface{}, taxes []Taxonomy) {
 
 func (j *JobInput) allowedTLP() bool {
 	// if maxtlp is not set, make it to maximum
-	maxtlp, err := j.Config.GetFloat("max_tlp")
+	var maxtlp TLP
+	maxtlpFloat, err := j.Config.GetFloat("max_tlp")
 	if err != nil {
-		maxtlp = 3
+		maxtlp = TLPRed
+	} else {
+		maxtlp = TLP(maxtlpFloat)
 	}
 
-	if j.TLP > int(maxtlp) {
+	if j.TLP > maxtlp {
 		return false
 	}
 	return true
@@ -166,12 +169,15 @@ func (j *JobInput) allowedTLP() bool {
 
 func (j *JobInput) allowedPAP() bool {
 	// if maxpap is not set, make it to maximum
-	maxpap, err := j.Config.GetFloat("max_pap")
+	var maxpap PAP
+	maxpapFloat, err := j.Config.GetFloat("max_pap")
 	if err != nil {
-		maxpap = 3
+		maxpap = PAPRed
+	} else {
+		maxpap = PAP(maxpapFloat)
 	}
 
-	if j.PAP > int(maxpap) {
+	if j.PAP > maxpap {
 		return false
 	}
 	return true

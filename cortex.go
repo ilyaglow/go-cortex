@@ -24,46 +24,54 @@ const (
 	errMessageFmt = "http status: %s, %s: %s"
 )
 
+// TLP means Traffic Light Protocol.
+type TLP uint8
+
+// PAP means Permissible Actions Protocol.
+type PAP uint8
+
 // Type var is used instead of const because a pointer is needed when
 // cortex.Task and cortex.FileTaskMeta structs are being marshalled. This will
 // enable omitting the value and force Cortex itself to use default TLP and PAP
 // for tasks: cortex.TLPAmber and cortex.PAPAmber.
 var (
 	// TLPWhite represents non-limited disclosure.
-	TLPWhite = 0
+	TLPWhite TLP
 
 	// TLPGreen limits disclosure, restricted to the community.
-	TLPGreen = 1
+	TLPGreen TLP = 1
 
 	// TLPAmber represents limited disclosure, restricted to participants’ organizations.
-	TLPAmber = 2
+	TLPAmber TLP = 2
 
 	// TLPRed is not for disclosure, restricted to participants only.
-	TLPRed = 3
+	TLPRed TLP = 3
+)
 
+var (
 	// PAPWhite represents no restrictions in using information.
 	// Source: https://github.com/MISP/misp-taxonomies/blob/master/PAP/machinetag.json#L24
-	PAPWhite = TLPWhite
+	PAPWhite PAP
 
 	// PAPGreen - active actions allowed.
 	// Recipients may use PAP:GREEN information to ping the target,
 	// block incoming/outgoing traffic from/to the target
 	// or specifically configure honeypots to interact with the target
 	// Source: https://github.com/MISP/misp-taxonomies/blob/master/PAP/machinetag.json#L19
-	PAPGreen = TLPGreen
+	PAPGreen PAP = 1
 
 	// PAPAmber - passive cross check.
 	// Recipients may use PAP:AMBER information for conducting online checks,
 	// like using services provided by third parties (e.g. VirusTotal),
 	// or set up a monitoring honeypot.
 	// Source: https://github.com/MISP/misp-taxonomies/blob/master/PAP/machinetag.json#L14
-	PAPAmber = TLPAmber
+	PAPAmber PAP = 2
 
 	// PAPRed - non-detectable actions only.
 	// Recipients may not use PAP:RED information on the network.
 	// Only passive actions on logs, that are not detectable from the outside.
 	// Source: https://github.com/MISP/misp-taxonomies/blob/master/PAP/machinetag.json#L9
-	PAPRed = TLPRed
+	PAPRed PAP = 3
 )
 
 // Client is used to communicate with Cortex API

@@ -17,8 +17,8 @@ const (
 type Task struct {
 	Data       string      `json:"data,omitempty"`
 	DataType   string      `json:"dataType,omitempty"`
-	TLP        *int        `json:"tlp,omitempty"`
-	PAP        *int        `json:"pap,omitempty"`
+	TLP        *TLP        `json:"tlp,omitempty"`
+	PAP        *PAP        `json:"pap,omitempty"`
 	Message    string      `json:"message,omitempty"`
 	Parameters interface{} `json:"parameters,omitempty"`
 }
@@ -43,8 +43,8 @@ type FileTask struct {
 // FileTaskMeta represents meta data of the file observable
 type FileTaskMeta struct {
 	DataType string `json:"dataType"`
-	TLP      *int   `json:"tlp,omitempty"`
-	PAP      *int   `json:"pap,omitempty"`
+	TLP      *TLP   `json:"tlp,omitempty"`
+	PAP      *PAP   `json:"pap,omitempty"`
 }
 
 // Type usually returns just a string "file" for a file task
@@ -100,8 +100,8 @@ type Artifact struct {
 	CreatedBy string `json:"createdBy"`
 	CreatedAt int64  `json:"createdAt"`
 	Data      string `json:"data"`
-	TLP       int    `json:"tlp"`
-	PAP       int    `json:"pap"`
+	TLP       TLP    `json:"tlp"`
+	PAP       PAP    `json:"pap"`
 	ID        string `json:"id"`
 }
 
