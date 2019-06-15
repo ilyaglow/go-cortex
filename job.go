@@ -115,7 +115,7 @@ type ReportBody struct {
 	Artifacts    []Artifact  `json:"artifacts,omitempty"`
 	FullReport   interface{} `json:"full,omitempty"`
 	Success      bool        `json:"success,omitempty"`
-	Summary      *Summary    `json:"summary,omitempty"`
+	Summary      Summary     `json:"summary,omitempty"`
 	ErrorMessage string      `json:"errorMessage,omitempty"`
 	Input        string      `json:"input,omitempty"`
 }
