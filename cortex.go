@@ -106,7 +106,7 @@ func NewClient(baseurl string, opts *ClientOpts) (*Client, error) {
 		return nil, err
 	}
 
-	if opts.HTTPClient != nil {
+	if opts.HTTPClient == nil {
 		opts.HTTPClient = http.DefaultClient
 	}
 
