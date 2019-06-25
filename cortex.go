@@ -86,9 +86,10 @@ type Client struct {
 	Users     UserService
 }
 
-// ClientOpts represent options that are passed to client
+// ClientOpts represent options that are passed to client.
 type ClientOpts struct {
-	Auth auth
+	Auth       auth
+	HTTPClient *http.Client
 }
 
 // errorMessage is the message that Cortex sends back to user when something
@@ -105,8 +106,12 @@ func NewClient(baseurl string, opts *ClientOpts) (*Client, error) {
 		return nil, err
 	}
 
+	if opts.HTTPClient != nil {
+		opts.HTTPClient = http.DefaultClient
+	}
+
 	c := &Client{
-		Client:    http.DefaultClient,
+		Client:    opts.HTTPClient,
 		BaseURL:   u,
 		UserAgent: userAgent,
 		Opts:      opts,
