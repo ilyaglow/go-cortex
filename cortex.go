@@ -268,7 +268,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 // checkResponse checks http response status code and returns an error if
 // needed.
 func checkResponse(r *http.Response) error {
-	if r.StatusCode == http.StatusOK {
+	if r.StatusCode > 199 && r.StatusCode < 300 {
 		return nil
 	}
 

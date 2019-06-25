@@ -131,6 +131,7 @@ type JobService interface {
 	Get(context.Context, string) (*Job, *http.Response, error)
 	GetReport(context.Context, string) (*Report, *http.Response, error)
 	WaitReport(context.Context, string, time.Duration) (*Report, *http.Response, error)
+	Delete(context.Context, string) (*http.Response, error)
 }
 
 // JobServiceOp handles cases methods from the Cortex API
@@ -189,4 +190,20 @@ func (j *JobServiceOp) WaitReport(ctx context.Context, jid string, d time.Durati
 	}
 
 	return &report, resp, err
+}
+
+// Delete the job from Cortex. This marks the job as Deleted. However the job's
+// data is not removed from the database.
+func (j *JobServiceOp) Delete(ctx context.Context, jobid string) (*http.Response, error) {
+	req, err := j.client.NewRequest("DELETE", fmt.Sprintf(jobsURL+"/%s", jobid), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := j.client.Do(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
